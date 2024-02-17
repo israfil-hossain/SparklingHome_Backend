@@ -3,7 +3,6 @@ import { ApiBody, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { AuthenticationService } from "./authentication.service";
 import { AuthUserId } from "./decorator/auth-user-id.decorator";
-import { AdminSignInDto } from "./dto/admin-sign-in.dto";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { SignInDto } from "./dto/sign-in.dto";
@@ -42,12 +41,12 @@ export class AuthenticationController {
   @Post("AdminSignIn")
   @HttpCode(200)
   @IsPublic()
-  @ApiBody({ type: AdminSignInDto })
+  @ApiBody({ type: SignInDto })
   @ApiResponse({
     status: 200,
     type: SuccessResponseDto,
   })
-  adminSignIn(@Body() adminSignInDto: AdminSignInDto) {
+  adminSignIn(@Body() adminSignInDto: SignInDto) {
     return this.authService.adminSignIn(adminSignInDto);
   }
 

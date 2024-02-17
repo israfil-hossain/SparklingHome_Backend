@@ -14,7 +14,6 @@ import { ApplicationUserRoleEnum } from "../application-user/enum/application-us
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { EmailService } from "../email/email.service";
 import { EncryptionService } from "../encryption/encryption.service";
-import { AdminSignInDto } from "./dto/admin-sign-in.dto";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 import { SignInDto } from "./dto/sign-in.dto";
 import { SignUpDto } from "./dto/sign-up.dto";
@@ -74,7 +73,7 @@ export class AuthenticationService {
     try {
       const user = await this.applicationUserRepository.getOneWhere({
         email: signInDto.email,
-        role: userRole ? userRole : signInDto.role,
+        role: userRole ? userRole : ApplicationUserRoleEnum.USER,
       });
 
       if (!user) {
@@ -124,9 +123,7 @@ export class AuthenticationService {
     }
   }
 
-  async adminSignIn(
-    adminSignInDto: AdminSignInDto,
-  ): Promise<SuccessResponseDto> {
+  async adminSignIn(adminSignInDto: SignInDto): Promise<SuccessResponseDto> {
     const signInDto = new SignInDto();
     signInDto.email = adminSignInDto.email;
     signInDto.password = adminSignInDto.password;

@@ -1,10 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, Model, Types } from "mongoose";
 import { ImageMeta } from "../../image-meta/entities/image-meta.entity";
-import {
-  ApplicationUserRoleDtoEnum,
-  ApplicationUserRoleEnum,
-} from "../enum/application-user-role.enum";
+import { ApplicationUserRoleEnum } from "../enum/application-user-role.enum";
 
 export type ApplicationUserDocument = HydratedDocument<ApplicationUser>;
 export type ApplicationUserType = Model<ApplicationUserDocument>;
@@ -30,9 +27,9 @@ export class ApplicationUser {
   @Prop({
     type: String,
     enum: Object.values(ApplicationUserRoleEnum),
-    default: ApplicationUserRoleEnum.RENTER,
+    default: ApplicationUserRoleEnum.USER,
   })
-  role: ApplicationUserRoleEnum | ApplicationUserRoleDtoEnum;
+  role: ApplicationUserRoleEnum;
 
   @Prop({ default: null })
   fullName?: string;

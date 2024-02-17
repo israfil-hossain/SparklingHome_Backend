@@ -51,7 +51,6 @@ export class ApplicationUserService {
     PageSize = 10,
     Name = "",
     Email = "",
-    UserRole,
   }: ListApplicationUserQuery): Promise<PaginatedResponseDto> {
     try {
       // Search query setup
@@ -61,9 +60,6 @@ export class ApplicationUserService {
       }
       if (Name) {
         searchQuery["fullName"] = { $regex: Name, $options: "i" };
-      }
-      if (UserRole) {
-        searchQuery["role"] = UserRole;
       }
 
       // Pagination setup

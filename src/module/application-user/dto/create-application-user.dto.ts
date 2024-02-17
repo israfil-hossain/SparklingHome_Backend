@@ -3,12 +3,10 @@ import { Transform } from "class-transformer";
 import {
   IsDate,
   IsEmail,
-  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
 } from "class-validator";
-import { ApplicationUserRoleDtoEnum } from "../enum/application-user-role.enum";
 
 export class CreateApplicationUserDto {
   @ApiProperty({ description: "User's email", example: "user@example.com" })
@@ -20,14 +18,6 @@ export class CreateApplicationUserDto {
   @IsNotEmpty({ message: "Password is required" })
   @IsString({ message: "Password must be a string" })
   password: string;
-
-  @ApiProperty({
-    description: "User's role",
-    enum: ApplicationUserRoleDtoEnum,
-    example: ApplicationUserRoleDtoEnum.RENTER,
-  })
-  @IsEnum(ApplicationUserRoleDtoEnum, { message: "Invalid user role" })
-  role: ApplicationUserRoleDtoEnum;
 
   @ApiProperty({ description: "User's full name", required: false })
   @IsOptional()
