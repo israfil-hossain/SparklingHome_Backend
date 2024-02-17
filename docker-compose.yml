@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  sparkling-home-backend:
+    build:
+      context: .
+      target: builder
+    image: sparkling-home:backend
+    container_name: sparkling-home-backend
+    ports:
+      - "5021:4000"
+    volumes:
+      - ./.env:/app/.env
+    command: npm run start:prod
