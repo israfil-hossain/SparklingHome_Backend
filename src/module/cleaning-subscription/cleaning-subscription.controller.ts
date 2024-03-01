@@ -28,6 +28,11 @@ export class CleaningSubscriptionController {
     return this.cleaningSubscriptionService.create(createDto, userId);
   }
 
+  @Get("GetUserSubscription")
+  getUserSubscription(@AuthUserId() { userId }: ITokenPayload) {
+    return this.cleaningSubscriptionService.getUserSubscription(userId);
+  }
+
   @Get("GetAllSubscriptionTypes")
   getAllCleaningSubscriptionTypes() {
     return this.cleaningSubscriptionService.getAllCleaningSubscriptionTypes();

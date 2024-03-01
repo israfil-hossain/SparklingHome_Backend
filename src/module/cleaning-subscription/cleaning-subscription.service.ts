@@ -32,6 +32,7 @@ export class CleaningSubscriptionService {
       const existingSubscription =
         await this.cleaningSubscriptionRepository.getOneWhere({
           subscribedUser: userId,
+          isActive: true,
         });
 
       if (existingSubscription) {
@@ -89,7 +90,32 @@ export class CleaningSubscriptionService {
     }
   }
 
-  getAllCleaningSubscriptionTypes() {
+  async getUserSubscription(userId: string): Promise<SuccessResponseDto> {
+    try {
+      const subscription =
+        await this.cleaningSubscriptionRepository.getOneWhere(
+          {
+            subscribedUser: userId,
+            isActive: true,
+          },
+          {
+            populate: ["cleaningPrice", "currentBooking"],
+          },
+        );
+
+      return new SuccessResponseDto(
+        "Subscription fetched successfully",
+        subscription,
+      );
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+
+      this.logger.error("Error finding document:", error);
+      throw new BadRequestException("Could not get document");
+    }
+  }
+
+  getAllCleaningSubscriptionTypes(): SuccessResponseDto {
     const subscriptionTypes = Object.values(
       CleaningSubscriptionFrequencyEnum,
     ).map((value) => ({
@@ -97,6 +123,10 @@ export class CleaningSubscriptionService {
       value,
     }));
 
-    return subscriptionTypes;
+    const response = new SuccessResponseDto(
+      "Types fetched successfully",
+      subscriptionTypes,
+    );
+    return response;
   }
 }
