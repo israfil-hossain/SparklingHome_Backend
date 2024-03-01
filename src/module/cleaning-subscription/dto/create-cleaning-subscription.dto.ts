@@ -2,15 +2,14 @@ import { ApiProperty } from "@nestjs/swagger";
 import {
   IsBoolean,
   IsDate,
-  IsEnum,
+  IsMongoId,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   Min,
-  MinLength,
+  MinDate,
 } from "class-validator";
-import { CleaningSubscriptionFrequencyEnum } from "../enum/cleaning-subscription-frequency.enum";
 
 export class CreateCleaningSubscriptionDto {
   @ApiProperty({ description: "Area in square meters", example: 100 })
@@ -25,7 +24,6 @@ export class CreateCleaningSubscriptionDto {
     { maxDecimalPlaces: 0 },
     { message: "Postal code must be a number" },
   )
-  @MinLength(5, { message: "Postal code must be at least 5 characters" })
   postalCode: number;
 
   @ApiProperty({ description: "Address", example: "123 Main St, City" })
@@ -40,15 +38,12 @@ export class CreateCleaningSubscriptionDto {
   cleaningDurationInHours: number;
 
   @ApiProperty({
-    enum: CleaningSubscriptionFrequencyEnum,
-    default: CleaningSubscriptionFrequencyEnum.WEEKLY,
-    description: "Frequency of the cleaning subscription",
+    required: true,
+    description: "The type of cleaning price",
   })
-  @IsNotEmpty({ message: "Subscription frequency is required" })
-  @IsEnum(CleaningSubscriptionFrequencyEnum, {
-    message: "Invalid subscription frequency",
-  })
-  subscriptionFrequency: CleaningSubscriptionFrequencyEnum;
+  @IsNotEmpty({ message: "Cleaning price is required" })
+  @IsMongoId({ message: "Invalid cleaning price" })
+  cleaningPrice: string;
 
   @ApiProperty({
     description: "Start date of the subscription",
@@ -56,6 +51,7 @@ export class CreateCleaningSubscriptionDto {
   })
   @IsNotEmpty({ message: "Start date is required" })
   @IsDate({ message: "Start date must be a valid date" })
+  @MinDate(new Date(), { message: "Start date must be in the future" })
   startDate: Date;
 
   @ApiProperty({

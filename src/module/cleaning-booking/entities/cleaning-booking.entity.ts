@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, Model, Types } from "mongoose";
+import { CleaningPrice } from "../../cleaning-price/entities/cleaning-price.entity";
 import { BaseEntity } from "../../common/entities/base.entity";
-import { PaymentReceive } from "../../payment-receive/entities/payment-receive.entity";
 import { CleaningBookingStatusEnum } from "../enum/cleaning-booking.enum";
 
 export type CleaningBookingDocument = HydratedDocument<CleaningBooking>;
@@ -19,27 +19,24 @@ export class CleaningBooking extends BaseEntity {
   @Prop({ required: true, min: 1 })
   cleaningDuration: number;
 
-  @Prop({ required: true, min: 1 })
-  cleaningPrice: number;
-
-  @Prop({ required: true, min: 1 })
-  suppliesCharges: number;
-
-  @Prop({ required: true, min: 1 })
-  discountAmount: number;
+  @Prop({
+    required: true,
+    type: Types.ObjectId,
+    ref: CleaningPrice.name,
+  })
+  cleaningPrice: string;
 
   @Prop({ required: true, min: 1 })
   totalAmount: number;
 
-  @Prop({ required: true, min: 1 })
-  vatAmount: number;
+  @Prop({ default: 0 })
+  suppliesCharges: number;
 
-  @Prop({
-    type: Types.ObjectId,
-    ref: PaymentReceive.name,
-    default: null,
-  })
-  paymentReceiveId?: string;
+  @Prop({ default: 0 })
+  discountAmount: number;
+
+  @Prop({ default: 0 })
+  vatAmount: number;
 
   @Prop({
     type: String,

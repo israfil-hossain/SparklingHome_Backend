@@ -16,5 +16,6 @@ import {
   ],
   controllers: [CleaningPriceController],
   providers: [CleaningPriceService, CleaningPriceRepository],
+  exports: [CleaningPriceRepository],
 })
 export class CleaningPriceModule {}

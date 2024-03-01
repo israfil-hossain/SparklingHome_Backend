@@ -1,10 +1,19 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument, Model } from "mongoose";
+import { HydratedDocument, Model, Types } from "mongoose";
+import { ApplicationUser } from "../../application-user/entities/application-user.entity";
+import { CleaningBooking } from "../../cleaning-booking/entities/cleaning-booking.entity";
+import { CleaningPrice } from "../../cleaning-price/entities/cleaning-price.entity";
 import { BaseEntity } from "../../common/entities/base.entity";
-import { CleaningSubscriptionFrequencyEnum } from "../enum/cleaning-subscription-frequency.enum";
 
 @Schema()
 export class CleaningSubscription extends BaseEntity {
+  @Prop({
+    required: true,
+    type: Types.ObjectId,
+    ref: ApplicationUser.name,
+  })
+  subscribedUser: string;
+
   @Prop({ required: true, min: 1 })
   areaInSquareMeters: number;
 
@@ -19,11 +28,10 @@ export class CleaningSubscription extends BaseEntity {
 
   @Prop({
     required: true,
-    type: String,
-    enum: Object.values(CleaningSubscriptionFrequencyEnum),
-    default: CleaningSubscriptionFrequencyEnum.WEEKLY,
+    type: Types.ObjectId,
+    ref: CleaningPrice.name,
   })
-  subscriptionFrequency: CleaningSubscriptionFrequencyEnum;
+  cleaningPrice: string;
 
   @Prop({ required: true, type: Date, min: new Date() })
   startDate: Date;
@@ -40,7 +48,11 @@ export class CleaningSubscription extends BaseEntity {
   @Prop({ default: 0 })
   couponDiscount: number;
 
-  @Prop({ default: null })
+  @Prop({
+    default: null,
+    type: Types.ObjectId,
+    ref: CleaningBooking.name,
+  })
   currentBooking: string;
 }
 

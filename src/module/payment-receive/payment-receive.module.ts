@@ -16,5 +16,6 @@ import { PaymentReceiveService } from "./payment-receive.service";
   ],
   controllers: [PaymentReceiveController],
   providers: [PaymentReceiveService, PaymentReceiveRepository],
+  exports: [PaymentReceiveRepository],
 })
 export class PaymentReceiveModule {}

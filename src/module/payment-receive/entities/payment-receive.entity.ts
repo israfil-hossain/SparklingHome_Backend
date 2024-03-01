@@ -10,11 +10,11 @@ export class PaymentReceive extends BaseEntity {
   @Prop({ type: Number, required: true })
   totalPayable: number;
 
-  @Prop({ type: Number, default: 0 })
-  totalPaid: number;
-
   @Prop({ type: Number, required: true })
   totalDue: number;
+
+  @Prop({ type: Number, default: 0 })
+  totalPaid: number;
 
   @Prop({ type: String })
   paymentIntentId: string;

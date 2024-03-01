@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { CleaningBookingController } from "./cleaning-booking.controller";
+import { CleaningBookingRepository } from "./cleaning-booking.repository";
 import { CleaningBookingService } from "./cleaning-booking.service";
 import {
   CleaningBooking,
@@ -14,6 +15,7 @@ import {
     ]),
   ],
   controllers: [CleaningBookingController],
-  providers: [CleaningBookingService],
+  providers: [CleaningBookingService, CleaningBookingRepository],
+  exports: [CleaningBookingRepository],
 })
 export class CleaningBookingModule {}
