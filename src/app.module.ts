@@ -9,6 +9,7 @@ import { ImageMetaModule } from "./module/image-meta/image-meta.module";
 import { ValidationProvider } from "./utility/provider/validation.provider";
 import { CleaningBookingModule } from "./module/cleaning-booking/cleaning-booking.module";
 import { CleaningTimeSlotModule } from "./module/cleaning-time-slot/cleaning-time-slot.module";
+import { CleaningPriceModule } from "./module/cleaning-price/cleaning-price.module";
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { CleaningTimeSlotModule } from "./module/cleaning-time-slot/cleaning-tim
     CleaningSubscriptionModule,
     CleaningBookingModule,
     CleaningTimeSlotModule,
+    CleaningPriceModule,
   ],
   providers: [ValidationProvider],
 })

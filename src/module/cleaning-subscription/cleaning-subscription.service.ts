@@ -7,9 +7,7 @@ export class CleaningSubscriptionService {
     const subscriptionTypes = Object.values(
       CleaningSubscriptionFrequencyEnum,
     ).map((value) => ({
-      label: value
-        .replace(/_/g, " ")
-        .replace(/\b\w/g, (char) => char.toUpperCase()),
+      label: value.replace(/([a-z])([A-Z])/g, "$1 $2"),
       value,
     }));
 

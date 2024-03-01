@@ -42,6 +42,7 @@ export class CleaningBooking extends BaseEntity {
   paymentReceiveId?: string;
 
   @Prop({
+    type: String,
     enum: Object.values(CleaningBookingStatusEnum),
     default: CleaningBookingStatusEnum.BookingInitiated,
   })
