@@ -3,10 +3,6 @@ import { HydratedDocument, Model } from "mongoose";
 import { BaseEntity } from "../../common/entities/base.entity";
 import { CleaningSubscriptionFrequencyEnum } from "../enum/cleaning-subscription-frequency.enum";
 
-export type CleaningSubscriptionDocument =
-  HydratedDocument<CleaningSubscription>;
-export type CleaningSubscriptionType = Model<CleaningSubscriptionDocument>;
-
 @Schema()
 export class CleaningSubscription extends BaseEntity {
   @Prop({ required: true, min: 1 })
@@ -47,6 +43,10 @@ export class CleaningSubscription extends BaseEntity {
   @Prop({ default: null })
   currentBooking: string;
 }
+
+export type CleaningSubscriptionDocument =
+  HydratedDocument<CleaningSubscription>;
+export type CleaningSubscriptionType = Model<CleaningSubscriptionDocument>;
 
 export const CleaningSubscriptionSchema =
   SchemaFactory.createForClass(CleaningSubscription);

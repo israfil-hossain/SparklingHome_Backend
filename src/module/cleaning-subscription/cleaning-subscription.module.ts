@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { CleaningSubscriptionController } from "./cleaning-subscription.controller";
+import { CleaningSubscriptionRepository } from "./cleaning-subscription.repository";
 import { CleaningSubscriptionService } from "./cleaning-subscription.service";
 import {
   CleaningSubscription,
@@ -14,6 +15,6 @@ import {
     ]),
   ],
   controllers: [CleaningSubscriptionController],
-  providers: [CleaningSubscriptionService],
+  providers: [CleaningSubscriptionService, CleaningSubscriptionRepository],
 })
 export class CleaningSubscriptionModule {}
