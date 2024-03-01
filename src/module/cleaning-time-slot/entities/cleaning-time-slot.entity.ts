@@ -5,7 +5,7 @@ import { CleaningWeekdayEnum } from "../enum/cleaning-weekday.enum";
 
 @Schema()
 export class CleaningTimeSlot extends BaseEntity {
-  @Prop({ required: true, validate: /\d{2}:\d{2}/ })
+  @Prop({ required: true, validate: /^([01]?\d|2[0-4]):([0-5]?\d)$/ })
   cleaningTime: string;
 
   @Prop({
