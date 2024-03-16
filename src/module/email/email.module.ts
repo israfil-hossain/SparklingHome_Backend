@@ -18,7 +18,7 @@ import { EmailService } from "./email.service";
           },
         },
         defaults: {
-          from: `"nest-modules" <${configService.get<string>(
+          from: `Sparkling Home <${configService.get<string>(
             "MAILER_FROM",
             "no-reply@sparkling-home.com",
           )}>`,

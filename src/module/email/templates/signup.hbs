@@ -1,12 +1,20 @@
 <html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>Welcome to {{companyName}}!</title>
-  </head>
   <body>
-    <h1>Welcome to {{companyName}}, {{userName}}!</h1>
+    <h3>Welcome to {{companyName}}, {{userName}}!</h3>
 
-    <p>We're thrilled to have you join our community!</p>
+    <p>You have been successfully registered as a new user with email:
+      {{userEmail}}.</p>
+
+    <p>Here are your login credentials:</p>
+    <ul>
+      <li><code><strong>Email:</strong> {{userEmail}}</code></li>
+      {{#if userPassword}}
+        <li><code><strong>Password:</strong> {{userPassword}}</code></li>
+      {{else}}
+        <li><code><strong>Password:</strong>
+            Your password which you used to signup!</code></li>
+      {{/if}}
+    </ul>
 
     <p>You're now officially a member of
       {{companyName}}, and we're excited to share all the amazing things we have
@@ -31,9 +39,6 @@
     <p>Thanks for joining us,
       {{userName}}! We're looking forward to seeing you around.</p>
 
-    <p>Sincerely,<br />
-      The
-      {{companyName}}
-      Team</p>
+    <p>Best regards,<br />The {{companyName}} Team</p>
   </body>
 </html>

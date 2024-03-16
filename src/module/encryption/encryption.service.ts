@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from "@nestjs/common";
 import * as base64url from "base64url";
 import * as bcrypt from "bcrypt";
 import * as uuid from "uuid";
@@ -33,5 +38,27 @@ export class EncryptionService {
     const mergedUuid = Array.from({ length }, () => uuid.v4()).join("");
     const tokenBuffer = Buffer.from(mergedUuid.replace(/-/g, ""), "hex");
     return base64url.default(tokenBuffer);
+  }
+
+  generateTemporaryPassword(length = 10) {
+    const lowercaseChars = "abcdefghijklmnopqrstuvwxyz";
+    const uppercaseChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const numericChars = "0123456789";
+    const specialChars = "!@#$%^&*()-_+=";
+
+    const allChars =
+      lowercaseChars + uppercaseChars + numericChars + specialChars;
+
+    let password = "";
+    try {
+      for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * allChars.length);
+        password += allChars[randomIndex];
+      }
+    } catch (error) {
+      throw new InternalServerErrorException("Failed to generate a password");
+    }
+
+    return password;
   }
 }

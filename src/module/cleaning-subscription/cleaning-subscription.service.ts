@@ -14,6 +14,7 @@ import { CleaningPriceRepository } from "../cleaning-price/cleaning-price.reposi
 import { IdNameResponseDto } from "../common/dto/id-name-respones.dto";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { ConfigurationRepository } from "../configuration/configuration.repository";
+import { EmailService } from "../email/email.service";
 import { EncryptionService } from "../encryption/encryption.service";
 import { CleaningSubscriptionRepository } from "./cleaning-subscription.repository";
 import { CreateCleaningSubscriptionDto } from "./dto/create-cleaning-subscription.dto";
@@ -32,6 +33,7 @@ export class CleaningSubscriptionService {
     private readonly configurationRepository: ConfigurationRepository,
     private readonly applicationUserRepository: ApplicationUserRepository,
     private readonly encryptionService: EncryptionService,
+    private readonly emailService: EmailService,
   ) {}
 
   async addSubscription(
@@ -58,7 +60,7 @@ export class CleaningSubscriptionService {
 
         subscriptionUser = existingUser;
       } else {
-        const userPassword = "dummyPassword@123";
+        const userPassword = this.encryptionService.generateTemporaryPassword();
         const userPasswordHash =
           await this.encryptionService.hashPassword(userPassword);
 
@@ -67,9 +69,16 @@ export class CleaningSubscriptionService {
           fullName: createDto.userFullName,
           phoneNumber: createDto.userPhoneNumber,
           pidNumber: createDto.userPidNumber,
+          address: createDto.address,
           role: ApplicationUserRoleEnum.USER,
           password: userPasswordHash,
         });
+
+        this.emailService.sendUserCredentialsMail(
+          subscriptionUser.email,
+          subscriptionUser.fullName ?? "User",
+          userPassword,
+        );
       }
 
       const cleaningPrice = await this.cleaningPriceRepository.getOneById(
