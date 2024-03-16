@@ -3,6 +3,7 @@ import { ApiBody, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { RequiredRoles } from "../application-user/decorator/roles.decorator";
 import { ApplicationUserRoleEnum } from "../application-user/enum/application-user-role.enum";
 import { AuthUserId } from "../authentication/decorator/auth-user-id.decorator";
+import { IsPublic } from "../authentication/guard/authentication.guard";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { CleaningTimeSlotService } from "./cleaning-time-slot.service";
 import { CreateCleaningTimeSlotDto } from "./dto/create-cleaning-time-slot.dto";
@@ -34,6 +35,7 @@ export class CleaningTimeSlotController {
   }
 
   @Get("GetAllByWeekdays")
+  @IsPublic()
   findAllByWeekdays() {
     return this.cleaningTimeSlotService.findAllByWeekdays();
   }

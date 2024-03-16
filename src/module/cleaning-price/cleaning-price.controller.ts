@@ -3,6 +3,7 @@ import { ApiBody, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { RequiredRoles } from "../application-user/decorator/roles.decorator";
 import { ApplicationUserRoleEnum } from "../application-user/enum/application-user-role.enum";
 import { AuthUserId } from "../authentication/decorator/auth-user-id.decorator";
+import { IsPublic } from "../authentication/guard/authentication.guard";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { CleaningPriceService } from "./cleaning-price.service";
 import { CreateCleaningPriceDto } from "./dto/create-cleaning-price.dto";
@@ -27,6 +28,7 @@ export class CleaningPriceController {
   }
 
   @Get("GetAll")
+  @IsPublic()
   findAll() {
     return this.cleaningPriceService.findAll();
   }

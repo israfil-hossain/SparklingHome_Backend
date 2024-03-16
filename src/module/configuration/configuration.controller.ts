@@ -3,6 +3,7 @@ import { ApiBody, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { RequiredRoles } from "../application-user/decorator/roles.decorator";
 import { ApplicationUserRoleEnum } from "../application-user/enum/application-user-role.enum";
 import { AuthUserId } from "../authentication/decorator/auth-user-id.decorator";
+import { IsPublic } from "../authentication/guard/authentication.guard";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { ConfigurationService } from "./configuration.service";
 import { UpdateSuppliesChargeDto } from "./dto/supplies-charge.dto";
@@ -34,6 +35,7 @@ export class ConfigurationController {
     status: 200,
     type: SuccessResponseDto,
   })
+  @IsPublic()
   getSupplierCharges() {
     return this.configurationService.getSupplierCharges();
   }

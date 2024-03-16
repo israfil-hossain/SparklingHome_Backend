@@ -5,7 +5,6 @@ import {
   Get,
   Param,
   Patch,
-  Post,
   Query,
   UploadedFile,
   UseInterceptors,
@@ -18,7 +17,6 @@ import { PaginatedResponseDto } from "../common/dto/paginated-response.dto";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { ApplicationUserService } from "./application-user.service";
 import { RequiredRoles } from "./decorator/roles.decorator";
-import { CreateApplicationUserDto } from "./dto/create-application-user.dto";
 import { ListApplicationUserQuery } from "./dto/list-application-user-query.dto";
 import { UpdateApplicationUserProfilePictureDto } from "./dto/update-application-user-profile-picture.dto";
 import { UpdateApplicationUserDto } from "./dto/update-application-user.dto";
@@ -29,16 +27,16 @@ import { ApplicationUserRoleEnum } from "./enum/application-user-role.enum";
 export class ApplicationUserController {
   constructor(private readonly userService: ApplicationUserService) {}
 
-  @Post("Create")
-  @ApiBody({ type: CreateApplicationUserDto })
-  @ApiResponse({
-    status: 201,
-    type: SuccessResponseDto,
-  })
-  @RequiredRoles([ApplicationUserRoleEnum.ADMIN])
-  create(@Body() createUserDto: CreateApplicationUserDto) {
-    return this.userService.create(createUserDto);
-  }
+  // @Post("Create")
+  // @ApiBody({ type: CreateApplicationUserDto })
+  // @ApiResponse({
+  //   status: 201,
+  //   type: SuccessResponseDto,
+  // })
+  // @RequiredRoles([ApplicationUserRoleEnum.ADMIN])
+  // create(@Body() createUserDto: CreateApplicationUserDto) {
+  //   return this.userService.create(createUserDto);
+  // }
 
   @Get("GetAll")
   @ApiResponse({

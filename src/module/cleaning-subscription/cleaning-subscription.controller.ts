@@ -1,8 +1,7 @@
 import { Body, Controller, Get, Post } from "@nestjs/common";
 import { ApiBody, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { RequiredRoles } from "../application-user/decorator/roles.decorator";
-import { ApplicationUserRoleEnum } from "../application-user/enum/application-user-role.enum";
 import { AuthUserId } from "../authentication/decorator/auth-user-id.decorator";
+import { IsPublic } from "../authentication/guard/authentication.guard";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { CleaningSubscriptionService } from "./cleaning-subscription.service";
 import { CreateCleaningSubscriptionDto } from "./dto/create-cleaning-subscription.dto";
@@ -14,18 +13,15 @@ export class CleaningSubscriptionController {
     private readonly cleaningSubscriptionService: CleaningSubscriptionService,
   ) {}
 
-  @Post("Create")
+  @Post("AddSubscription")
   @ApiBody({ type: CreateCleaningSubscriptionDto })
   @ApiResponse({
     status: 201,
     type: SuccessResponseDto,
   })
-  @RequiredRoles([ApplicationUserRoleEnum.ADMIN])
-  create(
-    @AuthUserId() { userId }: ITokenPayload,
-    @Body() createDto: CreateCleaningSubscriptionDto,
-  ) {
-    return this.cleaningSubscriptionService.create(createDto, userId);
+  @IsPublic()
+  addSubscription(@Body() createDto: CreateCleaningSubscriptionDto) {
+    return this.cleaningSubscriptionService.addSubscription(createDto);
   }
 
   @Get("GetUserSubscription")

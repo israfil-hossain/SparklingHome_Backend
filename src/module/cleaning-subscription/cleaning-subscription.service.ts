@@ -4,10 +4,15 @@ import {
   Injectable,
   Logger,
 } from "@nestjs/common";
+import { ApplicationUserRepository } from "../application-user/application-user.repository";
+import { ApplicationUserDocument } from "../application-user/entities/application-user.entity";
+import { ApplicationUserRoleEnum } from "../application-user/enum/application-user-role.enum";
 import { CleaningBookingRepository } from "../cleaning-booking/cleaning-booking.repository";
 import { CleaningPriceRepository } from "../cleaning-price/cleaning-price.repository";
 import { IdNameResponseDto } from "../common/dto/id-name-respones.dto";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
+import { ConfigurationRepository } from "../configuration/configuration.repository";
+import { EncryptionService } from "../encryption/encryption.service";
 import { CleaningSubscriptionRepository } from "./cleaning-subscription.repository";
 import { CreateCleaningSubscriptionDto } from "./dto/create-cleaning-subscription.dto";
 import { CleaningSubscriptionFrequencyEnum } from "./enum/cleaning-subscription-frequency.enum";
@@ -22,21 +27,47 @@ export class CleaningSubscriptionService {
     private readonly cleaningSubscriptionRepository: CleaningSubscriptionRepository,
     private readonly cleaningBookingRepository: CleaningBookingRepository,
     private readonly cleaningPriceRepository: CleaningPriceRepository,
+    private readonly configurationRepository: ConfigurationRepository,
+    private readonly applicationUserRepository: ApplicationUserRepository,
+    private readonly encryptionService: EncryptionService,
   ) {}
 
-  async create(
+  async addSubscription(
     createDto: CreateCleaningSubscriptionDto,
-    userId: string,
   ): Promise<SuccessResponseDto> {
     try {
-      const existingSubscription =
-        await this.cleaningSubscriptionRepository.getOneWhere({
-          subscribedUser: userId,
-          isActive: true,
-        });
+      let subscriptionUser: ApplicationUserDocument;
 
-      if (existingSubscription) {
-        throw new BadRequestException("You already have a subscription");
+      const existingUser = await this.applicationUserRepository.getOneWhere({
+        email: createDto.userEmail,
+        role: ApplicationUserRoleEnum.USER,
+      });
+
+      if (existingUser) {
+        const existingSubscription =
+          await this.cleaningSubscriptionRepository.getOneWhere({
+            subscribedUser: existingUser?.id,
+            isActive: true,
+          });
+
+        if (existingSubscription) {
+          throw new BadRequestException("You already have a subscription");
+        }
+
+        subscriptionUser = existingUser;
+      } else {
+        const userPassword = "dummyPassword@123";
+        const userPasswordHash =
+          await this.encryptionService.hashPassword(userPassword);
+
+        subscriptionUser = await this.applicationUserRepository.create({
+          email: createDto.userEmail,
+          fullName: createDto.userFullName,
+          phoneNumber: createDto.userPhoneNumber,
+          pidNumber: createDto.userPidNumber,
+          role: ApplicationUserRoleEnum.USER,
+          password: userPasswordHash,
+        });
       }
 
       const cleaningPrice = await this.cleaningPriceRepository.getOneById(
@@ -47,46 +78,65 @@ export class CleaningSubscriptionService {
         throw new BadRequestException("Cleaning price not valid");
       }
 
-      const result = await this.cleaningSubscriptionRepository.create({
+      const newSubscription = await this.cleaningSubscriptionRepository.create({
         ...createDto,
         cleaningPrice: cleaningPrice.id,
-        createdBy: userId,
-        subscribedUser: userId,
+        createdBy: subscriptionUser.id,
+        subscribedUser: subscriptionUser.id,
       });
 
-      // Price calculations
-      const cleaningDurationInHours = result.cleaningDurationInHours;
-      const cleaningPricePerHour = cleaningPrice.subscriptionPrice;
-      const couponDiscountAmount = result.couponDiscount;
-      const totalCleaningPrice = Math.ceil(
-        cleaningDurationInHours * cleaningPricePerHour - couponDiscountAmount,
-      );
-
       try {
+        const latestConfig = await this.configurationRepository.getOneWhere(
+          {},
+          { sort: { updatedAt: -1, createdAt: -1 } },
+        );
+
+        // Price calculations
+        const cleaningDurationInHours = newSubscription.cleaningDurationInHours;
+        const cleaningPricePerHour = cleaningPrice.subscriptionPrice;
+        const totalCleaningPrice =
+          cleaningDurationInHours * cleaningPricePerHour;
+
+        const couponDiscountAmount = newSubscription.couponDiscount ?? 0;
+        const suppliesCharge = latestConfig?.suppliesCharge ?? 0;
+
+        const finalCleaningPrice = Math.ceil(
+          totalCleaningPrice + suppliesCharge - couponDiscountAmount,
+        );
+
         const newBooking = await this.cleaningBookingRepository.create({
-          cleaningDate: result.startDate,
+          cleaningDate: newSubscription.startDate,
           cleaningDuration: cleaningDurationInHours,
           cleaningPrice: cleaningPrice.id,
           discountAmount: couponDiscountAmount,
-          totalAmount: totalCleaningPrice,
-          createdBy: userId,
+          totalAmount: finalCleaningPrice,
+          suppliesCharges: suppliesCharge,
+          createdBy: subscriptionUser.id,
         });
 
-        await this.cleaningSubscriptionRepository.updateOneById(result.id, {
-          currentBooking: newBooking.id,
-        });
+        await this.cleaningSubscriptionRepository.updateOneById(
+          newSubscription.id,
+          {
+            currentBooking: newBooking.id,
+          },
+        );
       } catch (error) {
-        await this.cleaningSubscriptionRepository.removeOneById(result.id);
+        await this.cleaningSubscriptionRepository.removeOneById(
+          newSubscription.id,
+        );
         throw error;
       }
 
-      const response = new IdNameResponseDto(result.id);
-      return new SuccessResponseDto("Document created successfully", response);
+      const response = new IdNameResponseDto(newSubscription.id);
+      return new SuccessResponseDto(
+        "Subscription created successfully",
+        response,
+      );
     } catch (error) {
       if (error instanceof HttpException) throw error;
 
-      this.logger.error("Error creating new document:", error);
-      throw new BadRequestException("Error creating new document");
+      this.logger.error("Error creating new subscription:", error);
+      throw new BadRequestException("Error creating new subscription");
     }
   }
 

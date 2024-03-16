@@ -16,6 +16,6 @@ import {
   ],
   controllers: [ConfigurationController],
   providers: [ConfigurationService, ConfigurationRepository],
-  exports: [ConfigurationService],
+  exports: [ConfigurationService, ConfigurationRepository],
 })
 export class ConfigurationModule {}

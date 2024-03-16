@@ -2,6 +2,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import {
   IsBoolean,
   IsDate,
+  IsEmail,
   IsMongoId,
   IsNotEmpty,
   IsNumber,
@@ -12,6 +13,29 @@ import {
 } from "class-validator";
 
 export class CreateCleaningSubscriptionDto {
+  @ApiProperty({ description: "Full Name", example: "John Doe" })
+  @IsNotEmpty({ message: "Full Name is required" })
+  @IsString({ message: "Full Name must be a string" })
+  userFullName: string;
+
+  @ApiProperty({ description: "Email", example: "john@example.com" })
+  @IsNotEmpty({ message: "Email is required" })
+  @IsEmail({}, { message: "Invalid email format" })
+  userEmail: string;
+
+  @ApiProperty({ description: "Phone Number", example: "1234567890" })
+  @IsNotEmpty({ message: "Phone Number is required" })
+  @IsString({ message: "Phone Number must be a string" })
+  userPhoneNumber: string;
+
+  @ApiProperty({
+    description: "Personal Identification Number",
+    example: "123456789",
+  })
+  @IsNotEmpty({ message: "Personal Identification Number is required" })
+  @IsString({ message: "Personal Identification Number must be a string" })
+  userPidNumber: string;
+
   @ApiProperty({ description: "Area in square meters", example: 100 })
   @IsNotEmpty({ message: "Area is required" })
   @IsNumber({}, { message: "Area must be a number" })

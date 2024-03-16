@@ -35,10 +35,10 @@ export class ApplicationUser {
   fullName?: string;
 
   @Prop({ default: null })
-  countryCode?: string;
+  phoneNumber?: string;
 
   @Prop({ default: null })
-  phoneNumber?: string;
+  pidNumber?: string;
 
   @Prop({ default: null })
   address?: string;

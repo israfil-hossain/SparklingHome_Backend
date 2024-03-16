@@ -21,7 +21,6 @@ export class ApplicationUserService {
 
   constructor(
     private readonly applicationUserRepository: ApplicationUserRepository,
-
     private readonly encryptionService: EncryptionService,
     private readonly imageService: ImageMetaService,
   ) {}
