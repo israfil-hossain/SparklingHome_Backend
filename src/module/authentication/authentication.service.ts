@@ -15,6 +15,8 @@ import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { EmailService } from "../email/email.service";
 import { EncryptionService } from "../encryption/encryption.service";
 import { ChangePasswordDto } from "./dto/change-password.dto";
+import { ResetPasswordRequestDto } from "./dto/reset-password-request.dto";
+import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { SignInDto } from "./dto/sign-in.dto";
 import { SignUpDto } from "./dto/sign-up.dto";
 import { TokenResponseDto } from "./dto/token-response.dto";
@@ -32,6 +34,31 @@ export class AuthenticationService {
     private readonly encryptionService: EncryptionService,
     private readonly mailService: EmailService,
   ) {}
+
+  async getLoggedInUser(userId: string): Promise<SuccessResponseDto> {
+    try {
+      const user = await this.applicationUserRepository.getOneById(userId, {
+        populate: [
+          {
+            path: "profilePicture",
+            select: "url",
+            transform: (doc) => doc?.url ?? null,
+          },
+        ],
+      });
+
+      if (!user) {
+        throw new NotFoundException(`No user found with id: ${userId}`);
+      }
+
+      return new SuccessResponseDto("Logged in user found", user);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+
+      this.logger.error(`Error getting current user:`, error);
+      throw new BadRequestException("Could not get user info");
+    }
+  }
 
   async signUp(signupDto: SignUpDto): Promise<SuccessResponseDto> {
     try {
@@ -247,28 +274,88 @@ export class AuthenticationService {
     }
   }
 
-  async getLoggedInUser(userId: string): Promise<SuccessResponseDto> {
+  async resetPasswordRequest(
+    resetPasswordRequestDto: ResetPasswordRequestDto,
+    originUrl: string | null,
+  ): Promise<SuccessResponseDto> {
     try {
-      const user = await this.applicationUserRepository.getOneById(userId, {
-        populate: [
-          {
-            path: "profilePicture",
-            select: "url",
-            transform: (doc) => doc?.url ?? null,
-          },
-        ],
+      if (!originUrl) {
+        throw new BadRequestException("Origin URL is required");
+      }
+
+      const user = await this.applicationUserRepository.getOneWhere({
+        email: resetPasswordRequestDto.email,
+        isActive: true,
       });
+
+      if (!user) {
+        throw new NotFoundException(
+          `No user found with email: ${resetPasswordRequestDto.email}`,
+        );
+      }
+
+      const currentTime = Date.now();
+      const resetToken = this.encryptionService.encryptString(
+        `${user.id}-${currentTime}`,
+      );
+      const resetLink = `${originUrl}/reset-password/${resetToken}`;
+
+      this.mailService.sendForgetPasswordMail(
+        user.email,
+        user.fullName,
+        resetLink,
+      );
+
+      return new SuccessResponseDto("Password reset mail sent successfully");
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+
+      this.logger.error(`Error sending password reset mail:`, error);
+      throw new BadRequestException("Could not send password reset mail");
+    }
+  }
+
+  async resetPassword(
+    resetPasswordDto: ResetPasswordDto,
+  ): Promise<SuccessResponseDto> {
+    try {
+      const decryptedResetToken = this.encryptionService.decryptString(
+        resetPasswordDto.resetToken,
+      );
+      if (!decryptedResetToken)
+        throw new BadRequestException("Invalid reset token");
+
+      const [userId = null, tokenGenTime = null] =
+        decryptedResetToken.split("-");
+      if (userId === null || tokenGenTime === null)
+        throw new BadRequestException("Invalid reset token format");
+
+      const tokenGenTimeInMs = Number(tokenGenTime);
+      if (Date.now() - tokenGenTimeInMs > 5 * 60 * 1000) {
+        // 5 * 60 * 1000 is 5 minutes
+        throw new BadRequestException("Reset token has expired");
+      }
+
+      const user = await this.applicationUserRepository.getOneById(userId);
 
       if (!user) {
         throw new NotFoundException(`No user found with id: ${userId}`);
       }
 
-      return new SuccessResponseDto("Logged in user found", user);
+      const hashedPassword = await this.encryptionService.hashPassword(
+        resetPasswordDto.newPassword,
+      );
+
+      await this.applicationUserRepository.updateOneById(userId, {
+        password: hashedPassword,
+      });
+
+      return new SuccessResponseDto("Password changed successfully");
     } catch (error) {
       if (error instanceof HttpException) throw error;
 
-      this.logger.error(`Error getting current user:`, error);
-      throw new BadRequestException("Could not get user info");
+      this.logger.error(`Error changing password:`, error);
+      throw new BadRequestException("Could not change password");
     }
   }
 
