@@ -9,6 +9,7 @@ import { ApplicationUserDocument } from "../application-user/entities/applicatio
 import { ApplicationUserRoleEnum } from "../application-user/enum/application-user-role.enum";
 import { CleaningBookingRepository } from "../cleaning-booking/cleaning-booking.repository";
 import { CleaningCouponRepository } from "../cleaning-coupon/cleaning-coupon.repository";
+import { CleaningCouponDocument } from "../cleaning-coupon/entities/cleaning-coupon.entity";
 import { CleaningPriceRepository } from "../cleaning-price/cleaning-price.repository";
 import { IdNameResponseDto } from "../common/dto/id-name-respones.dto";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
@@ -80,11 +81,15 @@ export class CleaningSubscriptionService {
         throw new BadRequestException("Cleaning price not valid");
       }
 
-      let cleaningCoupon = null;
+      let cleaningCoupon: CleaningCouponDocument | null = null;
       if (createDto?.cleaningCoupon) {
         cleaningCoupon = await this.cleaningCouponRepository.getOneById(
           createDto?.cleaningCoupon,
         );
+
+        if (!cleaningCoupon || !cleaningCoupon.id) {
+          throw new BadRequestException("Cleaning coupon not valid");
+        }
       }
 
       const newSubscription = await this.cleaningSubscriptionRepository.create({
