@@ -7,11 +7,8 @@ export type ConfigurationType = Model<ConfigurationDocument>;
 
 @Schema()
 export class Configuration extends BaseEntity {
-  @Prop({ required: true, default: 0, min: 0, max: 100 })
-  ownerCommission: number;
-
-  @Prop({ required: true, default: 0, min: 0, max: 100 })
-  renterCommission: number;
+  @Prop({ required: true, default: 0, min: 0 })
+  suppliesCharge: number;
 }
 
 export const ConfigurationSchema = SchemaFactory.createForClass(Configuration);

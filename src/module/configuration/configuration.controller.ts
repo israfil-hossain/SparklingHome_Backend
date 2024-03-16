@@ -5,37 +5,36 @@ import { ApplicationUserRoleEnum } from "../application-user/enum/application-us
 import { AuthUserId } from "../authentication/decorator/auth-user-id.decorator";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { ConfigurationService } from "./configuration.service";
-import { UpdateCommissionSettingsDto } from "./dto/commission-settings.dto";
+import { UpdateSuppliesChargeDto } from "./dto/supplies-charge.dto";
 
 @ApiTags("Configurations")
 @Controller("Configuration")
 export class ConfigurationController {
   constructor(private readonly configurationService: ConfigurationService) {}
 
-  @Patch("SetCommissionSettings")
-  @ApiBody({ type: UpdateCommissionSettingsDto })
+  @Patch("SetSuppliesCharge")
+  @ApiBody({ type: UpdateSuppliesChargeDto })
   @ApiResponse({
     status: 200,
     type: SuccessResponseDto,
   })
   @RequiredRoles([ApplicationUserRoleEnum.ADMIN])
-  updateCommission(
+  updateSupplierCharges(
     @AuthUserId() { userId }: ITokenPayload,
-    @Body() updateCommissionSettingsDto: UpdateCommissionSettingsDto,
+    @Body() updateSuppliesChargeDto: UpdateSuppliesChargeDto,
   ) {
-    return this.configurationService.updateCommissionSettings(
-      updateCommissionSettingsDto,
+    return this.configurationService.updateSupplierCharges(
+      updateSuppliesChargeDto,
       userId,
     );
   }
 
-  @Get("GetCommissionSettings")
+  @Get("GetSuppliesCharge")
   @ApiResponse({
     status: 200,
     type: SuccessResponseDto,
   })
-  @RequiredRoles([ApplicationUserRoleEnum.ADMIN])
-  getCommission() {
-    return this.configurationService.getCommissionSettings();
+  getSupplierCharges() {
+    return this.configurationService.getSupplierCharges();
   }
 }

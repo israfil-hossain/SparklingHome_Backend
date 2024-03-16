@@ -7,9 +7,9 @@ import {
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { ConfigurationRepository } from "./configuration.repository";
 import {
-  CommissionSettingsDto,
-  UpdateCommissionSettingsDto,
-} from "./dto/commission-settings.dto";
+  SuppliesChargeDto,
+  UpdateSuppliesChargeDto,
+} from "./dto/supplies-charge.dto";
 
 @Injectable()
 export class ConfigurationService {
@@ -19,8 +19,8 @@ export class ConfigurationService {
     private readonly configurationRepository: ConfigurationRepository,
   ) {}
 
-  async updateCommissionSettings(
-    configurationDto: UpdateCommissionSettingsDto,
+  async updateSupplierCharges(
+    configurationDto: UpdateSuppliesChargeDto,
     userId: string,
   ) {
     try {
@@ -42,13 +42,12 @@ export class ConfigurationService {
         });
       }
 
-      const commissionDto = new CommissionSettingsDto();
-      commissionDto.ownerCommission = configurationDto.ownerCommission ?? 0;
-      commissionDto.renterCommission = configurationDto.renterCommission ?? 0;
+      const suppliesChargeDto = new SuppliesChargeDto();
+      suppliesChargeDto.suppliesCharge = configurationDto.suppliesCharge ?? 0;
 
       return new SuccessResponseDto(
         "Document updated successfully",
-        commissionDto,
+        suppliesChargeDto,
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;
@@ -58,25 +57,24 @@ export class ConfigurationService {
     }
   }
 
-  async getCommissionSettings() {
+  async getSupplierCharges() {
     try {
       const latestConfig = await this.configurationRepository.getOneWhere(
         {},
         { sort: { updatedAt: -1, createdAt: -1 } },
       );
 
-      const commissionDto = new CommissionSettingsDto();
-      commissionDto.ownerCommission = latestConfig?.ownerCommission ?? 0;
-      commissionDto.renterCommission = latestConfig?.renterCommission ?? 0;
+      const suppliesChargeDto = new SuppliesChargeDto();
+      suppliesChargeDto.suppliesCharge = latestConfig?.suppliesCharge ?? 0;
 
       return new SuccessResponseDto(
-        "Commission settings retrieved successfully",
-        commissionDto,
+        "Supplier Charges retrieved successfully",
+        suppliesChargeDto,
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;
 
-      this.logger.error("Error in getting Commission Settings:", error);
+      this.logger.error("Error in getting Supplier Charges:", error);
       throw new BadRequestException("Error getting document");
     }
   }
