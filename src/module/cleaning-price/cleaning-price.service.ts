@@ -8,6 +8,7 @@ import { IdNameResponseDto } from "../common/dto/id-name-respones.dto";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { CleaningPriceRepository } from "./cleaning-price.repository";
 import { CreateCleaningPriceDto } from "./dto/create-cleaning-price.dto";
+import { CleaningSubscriptionFrequencyEnum } from "./enum/cleaning-subscription-frequency.enum";
 
 @Injectable()
 export class CleaningPriceService {
@@ -52,5 +53,20 @@ export class CleaningPriceService {
       this.logger.error("Error finding all document:", error);
       throw new BadRequestException("Could not get all document");
     }
+  }
+
+  getSubscriptionFrequencies(): SuccessResponseDto {
+    const subscriptionTypes = Object.values(
+      CleaningSubscriptionFrequencyEnum,
+    ).map((value) => ({
+      label: value.replace(/([a-z])([A-Z])/g, "$1 $2"),
+      value,
+    }));
+
+    const response = new SuccessResponseDto(
+      "Types fetched successfully",
+      subscriptionTypes,
+    );
+    return response;
   }
 }

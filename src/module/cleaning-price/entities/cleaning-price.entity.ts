@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, Model } from "mongoose";
-import { CleaningSubscriptionFrequencyEnum } from "../../cleaning-subscription/enum/cleaning-subscription-frequency.enum";
 import { BaseEntity } from "../../common/entities/base.entity";
+import { CleaningSubscriptionFrequencyEnum } from "../enum/cleaning-subscription-frequency.enum";
 
 @Schema()
 export class CleaningPrice extends BaseEntity {

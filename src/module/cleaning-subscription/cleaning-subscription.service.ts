@@ -17,7 +17,6 @@ import { ConfigurationRepository } from "../configuration/configuration.reposito
 import { EncryptionService } from "../encryption/encryption.service";
 import { CleaningSubscriptionRepository } from "./cleaning-subscription.repository";
 import { CreateCleaningSubscriptionDto } from "./dto/create-cleaning-subscription.dto";
-import { CleaningSubscriptionFrequencyEnum } from "./enum/cleaning-subscription-frequency.enum";
 
 @Injectable()
 export class CleaningSubscriptionService {
@@ -188,20 +187,5 @@ export class CleaningSubscriptionService {
       this.logger.error("Error finding document:", error);
       throw new BadRequestException("Could not get document");
     }
-  }
-
-  getAllCleaningSubscriptionTypes(): SuccessResponseDto {
-    const subscriptionTypes = Object.values(
-      CleaningSubscriptionFrequencyEnum,
-    ).map((value) => ({
-      label: value.replace(/([a-z])([A-Z])/g, "$1 $2"),
-      value,
-    }));
-
-    const response = new SuccessResponseDto(
-      "Types fetched successfully",
-      subscriptionTypes,
-    );
-    return response;
   }
 }

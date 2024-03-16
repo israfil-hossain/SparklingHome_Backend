@@ -32,4 +32,10 @@ export class CleaningPriceController {
   findAll() {
     return this.cleaningPriceService.findAll();
   }
+
+  @Get("GetAllSubscriptionFrequenciesForDropdown")
+  @RequiredRoles([ApplicationUserRoleEnum.ADMIN])
+  getSubscriptionFrequencies() {
+    return this.cleaningPriceService.getSubscriptionFrequencies();
+  }
 }

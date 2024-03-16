@@ -28,9 +28,4 @@ export class CleaningSubscriptionController {
   getUserSubscription(@AuthUserId() { userId }: ITokenPayload) {
     return this.cleaningSubscriptionService.getUserSubscription(userId);
   }
-
-  @Get("GetAllSubscriptionTypes")
-  getAllCleaningSubscriptionTypes() {
-    return this.cleaningSubscriptionService.getAllCleaningSubscriptionTypes();
-  }
 }
