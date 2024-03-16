@@ -1,44 +1,60 @@
 <html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body { font-family: Arial, sans-serif; background-color: #f9f9f9; margin:
+      0; padding: 0; line-height: 1.6; color: #333; } .container { max-width:
+      600px; margin: 20px auto; padding: 20px; background-color: #fff;
+      border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); } h3 {
+      font-size: 24px; color: #333; margin-bottom: 20px; } p { font-size: 16px;
+      margin-bottom: 15px; } ul { margin-bottom: 15px; } li { margin-bottom:
+      5px; } code { font-family: Consolas, monospace; background-color: #f4f4f4;
+      padding: 2px 4px; border-radius: 4px; } .note { background-color: #f4f4f4;
+      padding: 10px; border-left: 4px solid #007bff; margin-bottom: 20px; }
+      .signature { font-size: 12px; color: #666; }
+    </style>
+  </head>
   <body>
-    <h3>Welcome to {{companyName}}, {{userName}}!</h3>
+    <div class="container">
+      <h3>Welcome to
+        <strong>{{companyName}}</strong>!</h3>
 
-    <p>You have been successfully registered as a new user with email:
-      {{userEmail}}.</p>
+      <div class="note">
+        <p><strong>Dear {{userName}},</strong></p>
+        <p>We are delighted to inform you that your registration was successful:</p>
+        <p>Here are your login credentials:</p>
+        <ul>
+          <li><strong>Email:</strong> {{userEmail}}</li>
+          <li><strong>Password:</strong>
+            {{#if userPassword}}
+              <code>{{userPassword}}</code>
+            {{else}}
+              Your password which you used to sign up!
+            {{/if}}
+          </li>
+        </ul>
+      </div>
 
-    <p>Here are your login credentials:</p>
-    <ul>
-      <li><code><strong>Email:</strong> {{userEmail}}</code></li>
-      {{#if userPassword}}
-        <li><code><strong>Password:</strong> {{userPassword}}</code></li>
-      {{else}}
-        <li><code><strong>Password:</strong>
-            Your password which you used to signup!</code></li>
-      {{/if}}
-    </ul>
+      <div class="note">
+        <p>You're now officially a member of
+          <strong>{{companyName}}</strong>. We're thrilled to have you join our
+          community and we look forward to providing you with exceptional
+          service.</p>
 
-    <p>You're now officially a member of
-      {{companyName}}, and we're excited to share all the amazing things we have
-      to offer.</p>
+        <p>To get started, please take some time to explore our website or app.
+          Here, you'll discover a range of features and benefits designed to
+          enhance your experience.</p>
 
-    <p>Here are a few things you can do to get started:</p>
+        <p>If you have any questions or require assistance, our support team is
+          here to help. Feel free to reach out at any time.</p>
 
-    <ul>
-      <li>Explore our website or app to discover the features and benefits
-        available to you.</li>
-      <li>Update your profile to personalize your experience and make sure we
-        have your most up-to-date information.</li>
-      <li>Connect with other members in our community to share ideas,
-        collaborate, and learn from each other.</li>
-      <li>Reach out to our support team if you have any questions or need
-        assistance.</li>
-    </ul>
+        <p>Thank you for choosing
+          <strong>{{companyName}}</strong>. We value your trust and are
+          committed to ensuring your satisfaction.</p>
+      </div>
 
-    <p>We're committed to providing you with the best possible experience, and
-      we're always here to help you make the most of your membership.</p>
-
-    <p>Thanks for joining us,
-      {{userName}}! We're looking forward to seeing you around.</p>
-
-    <p>Best regards,<br />The {{companyName}} Team</p>
+      <p>Best regards,<br />The {{companyName}} Team</p>
+      <p class="signature">This is an automated message. Please do not reply.</p>
+    </div>
   </body>
 </html>

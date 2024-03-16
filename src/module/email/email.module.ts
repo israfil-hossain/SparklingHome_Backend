@@ -22,6 +22,10 @@ import { EmailService } from "./email.service";
             "MAILER_FROM",
             "no-reply@sparkling-home.com",
           )}>`,
+          replyTo: `Sparkling Home <${configService.get<string>(
+            "MAILER_FROM",
+            "no-reply@sparkling-home.com",
+          )}>`,
         },
         template: {
           dir: join(__dirname, "templates"),
