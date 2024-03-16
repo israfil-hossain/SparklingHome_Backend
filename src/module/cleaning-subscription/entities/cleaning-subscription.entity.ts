@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, Model, Types } from "mongoose";
 import { ApplicationUser } from "../../application-user/entities/application-user.entity";
 import { CleaningBooking } from "../../cleaning-booking/entities/cleaning-booking.entity";
+import { CleaningCoupon } from "../../cleaning-coupon/entities/cleaning-coupon.entity";
 import { CleaningPrice } from "../../cleaning-price/entities/cleaning-price.entity";
 import { BaseEntity } from "../../common/entities/base.entity";
 
@@ -33,6 +34,13 @@ export class CleaningSubscription extends BaseEntity {
   })
   cleaningPrice: string;
 
+  @Prop({
+    default: null,
+    type: Types.ObjectId,
+    ref: CleaningCoupon.name,
+  })
+  cleaningCoupon: string;
+
   @Prop({ required: true, type: Date, min: new Date() })
   startDate: Date;
 
@@ -44,9 +52,6 @@ export class CleaningSubscription extends BaseEntity {
 
   @Prop({ default: false })
   hasOtherPets: boolean;
-
-  @Prop({ default: 0 })
-  couponDiscount: number;
 
   @Prop({
     default: null,

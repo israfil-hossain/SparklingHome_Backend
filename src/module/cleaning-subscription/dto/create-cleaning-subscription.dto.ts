@@ -63,11 +63,21 @@ export class CreateCleaningSubscriptionDto {
 
   @ApiProperty({
     required: true,
-    description: "The type of cleaning price",
+    description: "The ID of cleaning price",
+    example: "65e1719621d642d46e4c6390",
   })
   @IsNotEmpty({ message: "Cleaning price is required" })
   @IsMongoId({ message: "Invalid cleaning price" })
   cleaningPrice: string;
+
+  @ApiProperty({
+    required: false,
+    description: "The ID of cleaning coupon",
+    example: "65e1719621d642d46e4c6390",
+  })
+  @IsMongoId({ message: "Invalid cleaning coupon" })
+  @IsOptional()
+  cleaningCoupon?: string;
 
   @ApiProperty({
     description: "Start date of the subscription",

@@ -8,6 +8,7 @@ import { ApplicationUserRepository } from "../application-user/application-user.
 import { ApplicationUserDocument } from "../application-user/entities/application-user.entity";
 import { ApplicationUserRoleEnum } from "../application-user/enum/application-user-role.enum";
 import { CleaningBookingRepository } from "../cleaning-booking/cleaning-booking.repository";
+import { CleaningCouponRepository } from "../cleaning-coupon/cleaning-coupon.repository";
 import { CleaningPriceRepository } from "../cleaning-price/cleaning-price.repository";
 import { IdNameResponseDto } from "../common/dto/id-name-respones.dto";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
@@ -27,6 +28,7 @@ export class CleaningSubscriptionService {
     private readonly cleaningSubscriptionRepository: CleaningSubscriptionRepository,
     private readonly cleaningBookingRepository: CleaningBookingRepository,
     private readonly cleaningPriceRepository: CleaningPriceRepository,
+    private readonly cleaningCouponRepository: CleaningCouponRepository,
     private readonly configurationRepository: ConfigurationRepository,
     private readonly applicationUserRepository: ApplicationUserRepository,
     private readonly encryptionService: EncryptionService,
@@ -78,9 +80,17 @@ export class CleaningSubscriptionService {
         throw new BadRequestException("Cleaning price not valid");
       }
 
+      let cleaningCoupon = null;
+      if (createDto?.cleaningCoupon) {
+        cleaningCoupon = await this.cleaningCouponRepository.getOneById(
+          createDto?.cleaningCoupon,
+        );
+      }
+
       const newSubscription = await this.cleaningSubscriptionRepository.create({
         ...createDto,
         cleaningPrice: cleaningPrice.id,
+        cleaningCoupon: cleaningCoupon?.id,
         createdBy: subscriptionUser.id,
         subscribedUser: subscriptionUser.id,
       });
@@ -97,9 +107,19 @@ export class CleaningSubscriptionService {
         const totalCleaningPrice =
           cleaningDurationInHours * cleaningPricePerHour;
 
-        const couponDiscountAmount = newSubscription.couponDiscount ?? 0;
-        const suppliesCharge = latestConfig?.suppliesCharge ?? 0;
+        // Coupon Discount Calculations
+        let couponDiscountAmount = 0;
+        if (cleaningCoupon) {
+          const discountAmount =
+            totalCleaningPrice * (cleaningCoupon.discountPercentage / 100);
+          couponDiscountAmount = Math.min(
+            discountAmount,
+            cleaningCoupon.maximumDiscount,
+          );
+        }
 
+        // Final Cleaning Price Calculations
+        const suppliesCharge = latestConfig?.suppliesCharge ?? 0;
         const finalCleaningPrice = Math.ceil(
           totalCleaningPrice + suppliesCharge - couponDiscountAmount,
         );

@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { ApplicationUserModule } from "../application-user/application-user.module";
 import { CleaningBookingModule } from "../cleaning-booking/cleaning-booking.module";
+import { CleaningCouponModule } from "../cleaning-coupon/cleaning-coupon.module";
 import { CleaningPriceModule } from "../cleaning-price/cleaning-price.module";
 import { ConfigurationModule } from "../configuration/configuration.module";
 import { EncryptionModule } from "../encryption/encryption.module";
@@ -21,6 +22,7 @@ import {
     ]),
     CleaningPriceModule,
     CleaningBookingModule,
+    CleaningCouponModule,
     PaymentReceiveModule,
     ConfigurationModule,
     ApplicationUserModule,
