@@ -1,4 +1,4 @@
-import { Controller, Get } from "@nestjs/common";
+import { Controller } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { CleaningBookingService } from "./cleaning-booking.service";
 
@@ -9,8 +9,8 @@ export class CleaningBookingController {
     private readonly cleaningBookingService: CleaningBookingService,
   ) {}
 
-  @Get("GetAll")
-  findAll() {
-    return this.cleaningBookingService.findAll();
-  }
+  // @Get("GetAll")
+  // findAll() {
+  //   return this.cleaningBookingService.findAll();
+  // }
 }

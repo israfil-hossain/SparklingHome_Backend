@@ -1,8 +1,8 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument, Model, Types } from "mongoose";
-import { CleaningPrice } from "../../cleaning-price/entities/cleaning-price.entity";
+import { HydratedDocument, Model } from "mongoose";
 import { BaseEntity } from "../../common/entities/base.entity";
-import { CleaningBookingStatusEnum } from "../enum/cleaning-booking.enum";
+import { CleaningBookingPaymentStatusEnum } from "../enum/cleaning-booking-payment-status.enum";
+import { CleaningBookingStatusEnum } from "../enum/cleaning-booking-status.enum";
 
 export type CleaningBookingDocument = HydratedDocument<CleaningBooking>;
 export type CleaningBookingType = Model<CleaningBookingDocument>;
@@ -19,24 +19,26 @@ export class CleaningBooking extends BaseEntity {
   @Prop({ required: true, min: 1 })
   cleaningDuration: number;
 
-  @Prop({
-    required: true,
-    type: Types.ObjectId,
-    ref: CleaningPrice.name,
-  })
-  cleaningPrice: string;
+  @Prop({ type: Number, required: true, min: 1 })
+  cleaningPrice: number;
 
-  @Prop({ required: true, min: 1 })
-  totalAmount: number;
-
-  @Prop({ default: 0 })
+  @Prop({ type: Number, default: 0 })
   suppliesCharges: number;
 
-  @Prop({ default: 0 })
+  @Prop({ type: Number, default: 0 })
   discountAmount: number;
 
-  @Prop({ default: 0 })
+  @Prop({ type: Number, default: 0 })
   vatAmount: number;
+
+  @Prop({ type: Number, default: 0 })
+  additionalCharges: number;
+
+  @Prop({ type: Number, required: true, min: 1 })
+  totalAmount: number;
+
+  @Prop({ type: String, default: null })
+  remarks: string;
 
   @Prop({
     type: String,
@@ -44,6 +46,13 @@ export class CleaningBooking extends BaseEntity {
     default: CleaningBookingStatusEnum.BookingInitiated,
   })
   bookingStatus: CleaningBookingStatusEnum;
+
+  @Prop({
+    type: String,
+    enum: Object.values(CleaningBookingPaymentStatusEnum),
+    default: CleaningBookingPaymentStatusEnum.PaymentPending,
+  })
+  paymentStatus: CleaningBookingPaymentStatusEnum;
 }
 
 export const CleaningBookingSchema =

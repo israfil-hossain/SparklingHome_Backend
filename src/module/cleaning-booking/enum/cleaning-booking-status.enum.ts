@@ -1,10 +1,6 @@
 export enum CleaningBookingStatusEnum {
   BookingInitiated = "BookingInitiated",
+  BookingConfirmed = "BookingConfirmed",
   BookingCompleted = "BookingCompleted",
   BookingCancelled = "BookingCancelled",
-
-  PaymentInitiated = "PaymentInitiated",
-  PaymentCreated = "PaymentCreated",
-  PaymentCompleted = "PaymentCompleted",
-  PaymentFailed = "PaymentFailed",
 }

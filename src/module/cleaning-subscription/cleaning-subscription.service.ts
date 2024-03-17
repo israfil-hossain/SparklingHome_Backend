@@ -135,18 +135,18 @@ export class CleaningSubscriptionService {
         }
 
         // Final Cleaning Price Calculations
-        const suppliesCharge = latestConfig?.suppliesCharge ?? 0;
+        const suppliesChargeAmount = latestConfig?.suppliesCharge ?? 0;
         const finalCleaningPrice = Math.ceil(
-          totalCleaningPrice + suppliesCharge - couponDiscountAmount,
+          totalCleaningPrice + suppliesChargeAmount - couponDiscountAmount,
         );
 
         const newBooking = await this.cleaningBookingRepository.create({
           cleaningDate: newSubscription.startDate,
           cleaningDuration: cleaningDurationInHours,
-          cleaningPrice: cleaningPrice.id,
+          cleaningPrice: totalCleaningPrice,
           discountAmount: couponDiscountAmount,
+          suppliesCharges: suppliesChargeAmount,
           totalAmount: finalCleaningPrice,
-          suppliesCharges: suppliesCharge,
           createdBy: subscriptionUser.id,
         });
 
