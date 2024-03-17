@@ -3,6 +3,7 @@ import {
   HttpException,
   Injectable,
   Logger,
+  NotFoundException,
 } from "@nestjs/common";
 import { ApplicationUserRepository } from "../application-user/application-user.repository";
 import { ApplicationUserDocument } from "../application-user/entities/application-user.entity";
@@ -12,12 +13,14 @@ import { CleaningCouponRepository } from "../cleaning-coupon/cleaning-coupon.rep
 import { CleaningCouponDocument } from "../cleaning-coupon/entities/cleaning-coupon.entity";
 import { CleaningPriceRepository } from "../cleaning-price/cleaning-price.repository";
 import { IdNameResponseDto } from "../common/dto/id-name-respones.dto";
+import { PaginatedResponseDto } from "../common/dto/paginated-response.dto";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { ConfigurationRepository } from "../configuration/configuration.repository";
 import { EmailService } from "../email/email.service";
 import { EncryptionService } from "../encryption/encryption.service";
 import { CleaningSubscriptionRepository } from "./cleaning-subscription.repository";
 import { CreateCleaningSubscriptionDto } from "./dto/create-cleaning-subscription.dto";
+import { ListCleaningSubscriptionQueryDto } from "./dto/list-cleaning-subscription-query.dto";
 
 @Injectable()
 export class CleaningSubscriptionService {
@@ -197,4 +200,92 @@ export class CleaningSubscriptionService {
       throw new BadRequestException("Could not get document");
     }
   }
+  async findAll({
+    Page = 1,
+    PageSize = 10,
+  }: ListCleaningSubscriptionQueryDto): Promise<PaginatedResponseDto> {
+    try {
+      // Search query setup
+      const searchQuery: Record<string, any> = {};
+      // if (Email) {
+      //   searchQuery["email"] = { $regex: Email, $options: "i" };
+      // }
+
+      // Pagination setup
+      const totalRecords =
+        await this.cleaningSubscriptionRepository.count(searchQuery);
+      const skip = (Page - 1) * PageSize;
+
+      const result = await this.cleaningSubscriptionRepository.getAll(
+        searchQuery,
+        {
+          limit: PageSize,
+          skip,
+          populate: [
+            {
+              path: "subscribedUser",
+              select: "email fullName profilePicture isActive",
+            },
+          ],
+        },
+      );
+
+      return new PaginatedResponseDto(totalRecords, Page, PageSize, result);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+
+      this.logger.error("Error finding users:", error);
+      throw new BadRequestException("Could not get all users");
+    }
+  }
+
+  async findOne(id: string): Promise<SuccessResponseDto> {
+    try {
+      const user = await this.cleaningSubscriptionRepository.getOneById(id, {
+        populate: [
+          {
+            path: "subscribedUser",
+            select: "-password",
+          },
+          {
+            path: "cleaningPrice",
+          },
+          {
+            path: "cleaningCoupon",
+          },
+          {
+            path: "currentBooking",
+          },
+        ],
+      });
+
+      if (!user) {
+        this.logger.error(`Document not found with ID: ${id}`);
+        throw new NotFoundException(`Could not find document with ID: ${id}`);
+      }
+
+      return new SuccessResponseDto("Document found successfully", user);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+
+      this.logger.error(`Error finding document with id ${id}:`, error);
+      throw new BadRequestException("Could not get document with id: " + id);
+    }
+  }
+
+  // async update(id: string, updateUserDto: UpdateApplicationUserDto) {
+  //   try {
+  //     const result = await this.cleaningSubscriptionRepository.updateOneById(
+  //       id,
+  //       updateUserDto,
+  //     );
+
+  //     return new SuccessResponseDto("User updated successfully", result);
+  //   } catch (error) {
+  //     if (error instanceof HttpException) throw error;
+
+  //     this.logger.error("Error updating new document:", error.description);
+  //     throw new BadRequestException("Error updating new document");
+  //   }
+  // }
 }
