@@ -133,9 +133,6 @@ export class PaymentReceiveService {
         case PaymentWebhookEventEnum.PaymentCheckoutCompleted:
           await this.handlePaymentCompleted(data);
           break;
-        case PaymentWebhookEventEnum.PaymentChargeCreatedV2:
-          await this.handlePaymentCompleted(data);
-          break;
         default:
           throw new Error("Invalid webhook event type");
       }
@@ -319,7 +316,6 @@ export class PaymentReceiveService {
       paymentReceive: paymentReceive.id,
       isActive: true,
       bookingStatus: { $ne: CleaningBookingStatusEnum.BookingCompleted },
-      paymentStatus: { $ne: CleaningBookingPaymentStatusEnum.PaymentCompleted },
     });
 
     if (!booking || !paymentReceive) {
@@ -332,7 +328,9 @@ export class PaymentReceiveService {
     };
 
     if (paymentStatus === CleaningBookingPaymentStatusEnum.PaymentCompleted) {
-      const payableAmount = data?.amount?.amount ?? data?.order?.amount?.amount;
+      const payableAmount = data?.order?.amount?.amount;
+      if (!payableAmount) return;
+
       const totalPaid = payableAmount / 100;
       const totalDue = paymentReceive.totalDue - totalPaid;
 

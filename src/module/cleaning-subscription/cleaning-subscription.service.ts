@@ -200,6 +200,7 @@ export class CleaningSubscriptionService {
       throw new BadRequestException("Could not get document");
     }
   }
+
   async findAll({
     Page = 1,
     PageSize = 10,
@@ -241,7 +242,7 @@ export class CleaningSubscriptionService {
 
   async findOne(id: string): Promise<SuccessResponseDto> {
     try {
-      const user = await this.cleaningSubscriptionRepository.getOneById(id, {
+      const result = await this.cleaningSubscriptionRepository.getOneById(id, {
         populate: [
           {
             path: "subscribedUser",
@@ -259,12 +260,12 @@ export class CleaningSubscriptionService {
         ],
       });
 
-      if (!user) {
+      if (!result) {
         this.logger.error(`Document not found with ID: ${id}`);
         throw new NotFoundException(`Could not find document with ID: ${id}`);
       }
 
-      return new SuccessResponseDto("Document found successfully", user);
+      return new SuccessResponseDto("Document found successfully", result);
     } catch (error) {
       if (error instanceof HttpException) throw error;
 
