@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
+import { CleaningBookingModule } from "../cleaning-booking/cleaning-booking.module";
 import {
   PaymentReceive,
   PaymentReceiveSchema,
@@ -13,6 +14,7 @@ import { PaymentReceiveService } from "./payment-receive.service";
     MongooseModule.forFeature([
       { name: PaymentReceive.name, schema: PaymentReceiveSchema },
     ]),
+    CleaningBookingModule,
   ],
   controllers: [PaymentReceiveController],
   providers: [PaymentReceiveService, PaymentReceiveRepository],

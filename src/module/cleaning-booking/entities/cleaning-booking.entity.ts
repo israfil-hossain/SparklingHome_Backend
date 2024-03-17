@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument, Model } from "mongoose";
+import { HydratedDocument, Model, Types } from "mongoose";
 import { BaseEntity } from "../../common/entities/base.entity";
+import { PaymentReceive } from "../../payment-receive/entities/payment-receive.entity";
 import { CleaningBookingPaymentStatusEnum } from "../enum/cleaning-booking-payment-status.enum";
 import { CleaningBookingStatusEnum } from "../enum/cleaning-booking-status.enum";
 
@@ -53,6 +54,13 @@ export class CleaningBooking extends BaseEntity {
     default: CleaningBookingPaymentStatusEnum.PaymentPending,
   })
   paymentStatus: CleaningBookingPaymentStatusEnum;
+
+  @Prop({
+    type: Types.ObjectId,
+    ref: PaymentReceive.name,
+    default: null,
+  })
+  paymentReceive: string;
 }
 
 export const CleaningBookingSchema =

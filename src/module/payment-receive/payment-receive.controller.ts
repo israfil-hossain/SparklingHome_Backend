@@ -9,6 +9,10 @@ import {
   Req,
 } from "@nestjs/common";
 import { ApiExcludeEndpoint, ApiResponse, ApiTags } from "@nestjs/swagger";
+import {
+  HostHeader,
+  OriginHeader,
+} from "../../utility/decorator/request-header.decorator";
 import { AuthUserId } from "../authentication/decorator/auth-user-id.decorator";
 import { IsPublic } from "../authentication/guard/authentication.guard";
 import { DocIdQueryDto } from "../common/dto/doc-id-query.dto";
@@ -26,20 +30,30 @@ export class PaymentReceiveController {
     type: SuccessResponseDto,
   })
   getPaymentIntent(
+    @HostHeader() hostUrl: string,
+    @OriginHeader() originUrl: string,
     @AuthUserId() { userId }: ITokenPayload,
     @Param() { DocId }: DocIdQueryDto,
   ) {
-    return this.paymentService.getPaymentIntent(DocId, userId);
+    const webhookUrl = `/api/PaymentReceive/WebhookEvent`;
+    // const webhookUrl = `https://sparkling-home-api.vercel.app/api/PaymentReceive/WebhookEvent`;
+    return this.paymentService.getPaymentIntent(
+      DocId,
+      userId,
+      hostUrl,
+      webhookUrl,
+      originUrl,
+    );
   }
 
-  @Post("StripeWebhook")
+  @Post("WebhookEvent")
   @HttpCode(200)
   @IsPublic()
   @ApiExcludeEndpoint()
-  async handleStripeWebhook(
+  async handleWebhookEvent(
     @Req() req: RawBodyRequest<Request>,
     @Headers("stripe-signature") signature: string,
   ): Promise<void> {
-    await this.paymentService.handleStripeWebhook(req, signature);
+    await this.paymentService.handleWebhookEvent(req, signature);
   }
 }

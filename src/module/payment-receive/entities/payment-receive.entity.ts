@@ -20,6 +20,9 @@ export class PaymentReceive extends BaseEntity {
   paymentIntentId: string;
 
   @Prop({ type: String })
+  paymentRedirectUrl: string;
+
+  @Prop({ type: String })
   lastPaymentEvent: string;
 }
 
