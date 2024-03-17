@@ -5,7 +5,7 @@ import { NestExpressApplication } from "@nestjs/platform-express";
 import { AppModule } from "./app.module";
 import { configureSwaggerUI } from "./config/swagger.config";
 
-const logger = new Logger("SparklingHome");
+const logger = new Logger("Glansandehem");
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {

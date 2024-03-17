@@ -4,7 +4,7 @@ import { Injectable, Logger } from "@nestjs/common";
 @Injectable()
 export class EmailService {
   private readonly logger: Logger = new Logger(EmailService.name);
-  private readonly companyName: string = "Sparkling Home";
+  private readonly companyName: string = "Glansandehem";
 
   constructor(private mailerService: MailerService) {}
 

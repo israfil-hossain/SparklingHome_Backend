@@ -18,11 +18,11 @@ import { EmailService } from "./email.service";
           },
         },
         defaults: {
-          from: `Sparkling Home <${configService.get<string>(
+          from: `Glansandehem <${configService.get<string>(
             "MAILER_FROM",
             "no-reply@sparkling-home.com",
           )}>`,
-          replyTo: `Sparkling Home <${configService.get<string>(
+          replyTo: `Glansandehem <${configService.get<string>(
             "MAILER_FROM",
             "no-reply@sparkling-home.com",
           )}>`,

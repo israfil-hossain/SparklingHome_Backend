@@ -6,7 +6,7 @@ import {
 } from "@nestjs/swagger";
 
 const documentConfig = new DocumentBuilder()
-  .setTitle("Sparkling Home API")
+  .setTitle("Glansandehem API")
   .setVersion("1.0")
   .addBearerAuth(
     {
@@ -26,7 +26,7 @@ const swaggerUiOptions: SwaggerCustomOptions = {
   swaggerOptions: {
     persistAuthorization: true,
   },
-  customSiteTitle: "Sparkling Home API",
+  customSiteTitle: "Glansandehem API",
   customJs: [
     "https://unpkg.com/swagger-ui-dist@4.5.0/swagger-ui-bundle.js",
     "https://unpkg.com/swagger-ui-dist@4.5.0/swagger-ui-standalone-preset.js",
