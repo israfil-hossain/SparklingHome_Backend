@@ -115,9 +115,9 @@ export class PaymentReceiveService {
         paymentIntentResponse,
       );
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
+      if (error instanceof HttpException) throw error;
+      this.logger.error(error?.response?.data);
+
       this.logger.error("Error in getPaymentIntent:", error);
       throw new BadRequestException("Failed to get payment intent");
     }
@@ -126,12 +126,8 @@ export class PaymentReceiveService {
   async handleWebhookEvent(request: Request): Promise<void> {
     try {
       const authHeader = request.get("authorization");
-      if (!authHeader) throw new BadRequestException("Unauthorized access");
-
-      const decryptedWebhookSecret =
-        this.encryptionService.decryptString(authHeader);
-      if (decryptedWebhookSecret !== this.webhookSecret)
-        throw new BadRequestException("Invalid authorization token");
+      if (!authHeader || authHeader !== this.webhookSecret)
+        throw new BadRequestException("Unauthorized access");
 
       const event: IPaymentWebhookEvent = request.body;
       if (!event) throw new BadRequestException("Invalid webhook payload");
@@ -251,9 +247,7 @@ export class PaymentReceiveService {
         webHooks: Object.values(PaymentWebhookEventEnum).map((value) => ({
           eventName: value,
           url: callbackUrls.webhookEventUrl,
-          authorization: this.encryptionService.encryptString(
-            this.webhookSecret,
-          ),
+          authorization: this.webhookSecret,
         })),
       },
     };
