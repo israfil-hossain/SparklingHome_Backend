@@ -108,7 +108,7 @@ export class PaymentReceiveService {
             items: [
               {
                 reference: booking.id,
-                name: "Cleaning booking",
+                name: `Reservation for cleaning on ${new Date(booking.cleaningDate).toDateString()}`,
                 quantity: 1,
                 unit: "Reservation",
                 unitPrice: booking.totalAmount * 100,
@@ -148,10 +148,10 @@ export class PaymentReceiveService {
         };
 
         const { data: paymentIntentCreateResponse } =
-          await this.paymentApiClient.post<IPaymentIntentCreateResponse>(
-            "/v1/payments",
-            paymentIntentCreateDto,
-          );
+          await this.paymentApiClient.post<{
+            paymentId: string;
+            hostedPaymentPageUrl: string;
+          }>("/v1/payments", paymentIntentCreateDto);
 
         paymentReceive = await this.paymentReceiveRepository.create({
           totalPayable: booking.totalAmount,
@@ -179,8 +179,6 @@ export class PaymentReceiveService {
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;
-
-      console.log(error?.response?.data);
 
       this.logger.error("Error in getPaymentIntent:", error);
       throw new BadRequestException("Failed to get payment intent");
@@ -282,7 +280,9 @@ export class PaymentReceiveService {
     try {
       const parsedUrl = new URL(url);
       const hostname = parsedUrl.hostname.toLowerCase();
+
       return (
+        parsedUrl.protocol !== "https:" ||
         hostname === "localhost" ||
         hostname === "[::1]" ||
         /^(127(?:\.\d{1,3}){3})$/.test(hostname)
@@ -291,9 +291,4 @@ export class PaymentReceiveService {
       return true;
     }
   }
-}
-
-interface IPaymentIntentCreateResponse {
-  paymentId: string;
-  hostedPaymentPageUrl: string;
 }
