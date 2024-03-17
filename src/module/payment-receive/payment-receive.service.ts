@@ -70,16 +70,6 @@ export class PaymentReceiveService {
     try {
       const booking = await this.getBookingWithPayment(bookingId);
 
-      if (
-        booking.bookingStatus === CleaningBookingStatusEnum.BookingCompleted &&
-        booking.paymentStatus ===
-          CleaningBookingPaymentStatusEnum.PaymentCompleted
-      ) {
-        throw new BadRequestException(
-          "Payment already completed for this booking",
-        );
-      }
-
       let paymentReceive =
         booking.paymentReceive as unknown as PaymentReceiveDocument;
 
@@ -134,20 +124,17 @@ export class PaymentReceiveService {
 
       const { event: eventType, data } = event;
       switch (eventType) {
-        case PaymentWebhookEventEnum.PaymentCreated:
-          await this.handlePaymentCreated(data);
-          break;
         case PaymentWebhookEventEnum.PaymentReservationFailed:
-          await this.handlePaymentReservationFailed(data);
-          break;
-        case PaymentWebhookEventEnum.PaymentCheckoutCompleted:
-          await this.handlePaymentCheckoutCompleted(data);
-          break;
-        case PaymentWebhookEventEnum.PaymentChargeCreatedV2:
-          await this.handlePaymentChargeCreatedV2(data);
+          await this.handlePaymentFailed(data);
           break;
         case PaymentWebhookEventEnum.PaymentChargeFailed:
-          await this.handlePaymentChargeFailed(data);
+          await this.handlePaymentFailed(data);
+          break;
+        case PaymentWebhookEventEnum.PaymentCheckoutCompleted:
+          await this.handlePaymentCompleted(data);
+          break;
+        case PaymentWebhookEventEnum.PaymentChargeCreatedV2:
+          await this.handlePaymentCompleted(data);
           break;
         default:
           throw new Error("Invalid webhook event type");
@@ -166,14 +153,22 @@ export class PaymentReceiveService {
       {
         _id: bookingId,
         isActive: true,
+        bookingStatus: { $ne: CleaningBookingStatusEnum.BookingCompleted },
+        paymentStatus: {
+          $ne: CleaningBookingPaymentStatusEnum.PaymentCompleted,
+        },
       },
       {
         populate: "paymentReceive",
       },
     );
     if (!booking) {
-      this.logger.error(`Booking with ID ${bookingId} was not found.`);
-      throw new NotFoundException(`Booking with ID ${bookingId} not found.`);
+      this.logger.error(
+        `Booking with ID ${bookingId} was not found or has been paid.`,
+      );
+      throw new NotFoundException(
+        `Booking with ID ${bookingId} not found or has been paid.`,
+      );
     }
 
     return booking;
@@ -282,7 +277,7 @@ export class PaymentReceiveService {
 
     this.cleaningBookingRepository.updateOneById(booking.id, {
       paymentReceive: paymentReceive.id,
-      paymentStatus: CleaningBookingPaymentStatusEnum.PaymentInitiated,
+      paymentStatus: CleaningBookingPaymentStatusEnum.PaymentCreated,
       updatedBy: auditUserId,
     });
 
@@ -290,16 +285,7 @@ export class PaymentReceiveService {
   }
 
   // Webhook handler heplers
-  private async handlePaymentCreated(
-    data: IPaymentWebhookEventData,
-  ): Promise<void> {
-    await this.updateBookingAndPaymentStatus(
-      data,
-      CleaningBookingPaymentStatusEnum.PaymentInitiated,
-    );
-  }
-
-  private async handlePaymentReservationFailed(
+  private async handlePaymentFailed(
     data: IPaymentWebhookEventData,
   ): Promise<void> {
     await this.updateBookingAndPaymentStatus(
@@ -308,7 +294,7 @@ export class PaymentReceiveService {
     );
   }
 
-  private async handlePaymentCheckoutCompleted(
+  private async handlePaymentCompleted(
     data: IPaymentWebhookEventData,
   ): Promise<void> {
     await this.updateBookingAndPaymentStatus(
@@ -317,38 +303,28 @@ export class PaymentReceiveService {
     );
   }
 
-  private async handlePaymentChargeCreatedV2(
-    data: IPaymentWebhookEventData,
-  ): Promise<void> {
-    await this.updateBookingAndPaymentStatus(
-      data,
-      CleaningBookingPaymentStatusEnum.PaymentCreated,
-    );
-  }
-
-  private async handlePaymentChargeFailed(
-    data: IPaymentWebhookEventData,
-  ): Promise<void> {
-    await this.updateBookingAndPaymentStatus(
-      data,
-      CleaningBookingPaymentStatusEnum.PaymentFailed,
-    );
-  }
-
   private async updateBookingAndPaymentStatus(
     data: IPaymentWebhookEventData,
     paymentStatus: CleaningBookingPaymentStatusEnum,
   ): Promise<void> {
-    const bookinId = data?.orderItems[0]?.reference;
-    if (!bookinId) throw new BadRequestException("Invalid booking id");
+    const paymentReceive = await this.paymentReceiveRepository.getOneWhere({
+      paymentIntentId: data.paymentId,
+    });
+    if (!paymentReceive) {
+      this.logger.error("Invalid payment receive");
+      throw new BadRequestException("Invalid payment receive");
+    }
 
-    const booking = await this.getBookingWithPayment(bookinId);
-    const paymentReceive =
-      booking.paymentReceive as unknown as PaymentReceiveDocument;
+    const booking = await this.cleaningBookingRepository.getOneWhere({
+      paymentReceive: paymentReceive.id,
+      isActive: true,
+      bookingStatus: { $ne: CleaningBookingStatusEnum.BookingCompleted },
+      paymentStatus: { $ne: CleaningBookingPaymentStatusEnum.PaymentCompleted },
+    });
 
     if (!booking || !paymentReceive) {
       this.logger.error("Invalid booking or payment receive");
-      throw new BadRequestException("Invalid booking or payment receive");
+      throw new BadRequestException("Invalid booking or booking already paid");
     }
 
     const paymentReceiveUpdate: UpdateQuery<PaymentReceiveDocument> = {
