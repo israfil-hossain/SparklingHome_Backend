@@ -89,8 +89,7 @@ export class EncryptionService {
       encrypted += cipher.final("base64");
 
       return encrypted;
-    } catch (error) {
-      console.error("Encryption failed:", error);
+    } catch (_) {
       throw new InternalServerErrorException("Encryption failed");
     }
   }
@@ -110,8 +109,7 @@ export class EncryptionService {
       decrypted += decipher.final("utf8");
 
       return decrypted;
-    } catch (error) {
-      console.error("Decryption failed:", error);
+    } catch (_) {
       throw new InternalServerErrorException("Decryption failed");
     }
   }

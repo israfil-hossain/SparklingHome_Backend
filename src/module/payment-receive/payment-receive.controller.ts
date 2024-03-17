@@ -1,14 +1,6 @@
-import {
-  Controller,
-  Get,
-  Headers,
-  HttpCode,
-  Param,
-  Post,
-  RawBodyRequest,
-  Req,
-} from "@nestjs/common";
+import { Controller, Get, HttpCode, Param, Post, Req } from "@nestjs/common";
 import { ApiExcludeEndpoint, ApiResponse, ApiTags } from "@nestjs/swagger";
+import type { Request } from "express";
 import {
   HostHeader,
   OriginHeader,
@@ -36,7 +28,6 @@ export class PaymentReceiveController {
     @Param() { DocId }: DocIdQueryDto,
   ) {
     const webhookUrl = `/api/PaymentReceive/WebhookEvent`;
-    // const webhookUrl = `https://sparkling-home-api.vercel.app/api/PaymentReceive/WebhookEvent`;
     return this.paymentService.getPaymentIntent(
       DocId,
       userId,
@@ -50,10 +41,7 @@ export class PaymentReceiveController {
   @HttpCode(200)
   @IsPublic()
   @ApiExcludeEndpoint()
-  async handleWebhookEvent(
-    @Req() req: RawBodyRequest<Request>,
-    @Headers("stripe-signature") signature: string,
-  ): Promise<void> {
-    await this.paymentService.handleWebhookEvent(req, signature);
+  async handleWebhookEvent(@Req() request: Request): Promise<void> {
+    await this.paymentService.handleWebhookEvent(request);
   }
 }

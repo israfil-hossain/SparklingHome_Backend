@@ -4,25 +4,27 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  NotImplementedException,
-  RawBodyRequest,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import axios, { AxiosInstance } from "axios";
+import type { Request } from "express";
+import { UpdateQuery } from "mongoose";
 import { CleaningBookingRepository } from "../cleaning-booking/cleaning-booking.repository";
+import { CleaningBookingDocument } from "../cleaning-booking/entities/cleaning-booking.entity";
 import { CleaningBookingPaymentStatusEnum } from "../cleaning-booking/enum/cleaning-booking-payment-status.enum";
 import { CleaningBookingStatusEnum } from "../cleaning-booking/enum/cleaning-booking-status.enum";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
+import { EncryptionService } from "../encryption/encryption.service";
 import { PaymentIntentResponseDto } from "./dto/payment-intent-response.dto";
 import { PaymentReceiveDocument } from "./entities/payment-receive.entity";
 import { PaymentWebhookEventEnum } from "./enum/payment-webhook-event.enum";
+import { ICallbackUrls } from "./interface/callback-urls.interface";
+import { IPaymentIntentCreateDto } from "./interface/payment-intent-create.interface";
+import {
+  IPaymentWebhookEvent,
+  IPaymentWebhookEventData,
+} from "./interface/payment-webhook-event.interface";
 import { PaymentReceiveRepository } from "./payment-receive.repository";
-
-// interface StripeIntentMetadata extends Stripe.MetadataParam {
-//   bookingCode: string;
-//   bookingId: string;
-//   paymentReceiveId: string;
-// }
 
 @Injectable()
 export class PaymentReceiveService {
@@ -34,6 +36,7 @@ export class PaymentReceiveService {
 
   constructor(
     private readonly configService: ConfigService,
+    private readonly encryptionService: EncryptionService,
     private readonly paymentReceiveRepository: PaymentReceiveRepository,
     private readonly cleaningBookingRepository: CleaningBookingRepository,
   ) {
@@ -65,107 +68,41 @@ export class PaymentReceiveService {
     originUrl: string,
   ): Promise<SuccessResponseDto> {
     try {
-      const booking = await this.cleaningBookingRepository.getOneById(
-        bookingId,
-        {
-          populate: "paymentReceive",
-        },
-      );
-
-      if (!booking) {
-        this.logger.error(
-          `Booking with ID ${bookingId} requested by ${auditUserId} was not found.`,
-        );
-        throw new NotFoundException(`Booking with ID ${bookingId} not found.`);
-      }
+      const booking = await this.getBookingWithPayment(bookingId);
 
       if (
         booking.bookingStatus === CleaningBookingStatusEnum.BookingCompleted &&
         booking.paymentStatus ===
           CleaningBookingPaymentStatusEnum.PaymentCompleted
       ) {
-        this.logger.error(
-          `Booking with ID ${bookingId} requested by ${auditUserId} is already paid.`,
-        );
         throw new BadRequestException(
           "Payment already completed for this booking",
         );
       }
 
       let paymentReceive =
-        booking?.paymentReceive as unknown as PaymentReceiveDocument;
+        booking.paymentReceive as unknown as PaymentReceiveDocument;
+
       if (!paymentReceive) {
-        const hostCallbackUrl = this.isInvalidForPG(hostUrl)
-          ? this.staticServerUrl
-          : hostUrl;
+        const callbackUrls = this.getCallbackUrls(
+          hostUrl,
+          originUrl,
+          webhookEndpoint,
+        );
+        const paymentIntentCreateDto = this.constructPaymentIntentDto(
+          booking,
+          callbackUrls,
+        );
 
-        const websiteCallbackUrl = this.isInvalidForPG(originUrl)
-          ? this.staticWebsiteUrl
-          : originUrl;
+        const paymentIntentCreateResponse = await this.createPaymentIntent(
+          paymentIntentCreateDto,
+        );
 
-        const paymentIntentCreateDto = {
-          order: {
-            items: [
-              {
-                reference: booking.id,
-                name: `Reservation for cleaning on ${new Date(booking.cleaningDate).toDateString()}`,
-                quantity: 1,
-                unit: "Reservation",
-                unitPrice: booking.totalAmount * 100,
-                netTotalAmount: booking.totalAmount * 100,
-                grossTotalAmount: booking.totalAmount * 100,
-                // imageUrl: "string",
-              },
-            ],
-            amount: booking.totalAmount * 100,
-            currency: "SEK",
-            reference: booking.id,
-          },
-          checkout: {
-            integrationType: "HostedPaymentPage",
-            returnUrl: `${websiteCallbackUrl}/redirect-payment`,
-            termsUrl: `${websiteCallbackUrl}/terms-and-conditions`,
-            charge: true,
-            publicDevice: true,
-            merchantHandlesConsumerData: true,
-            appearance: {
-              displayOptions: {
-                showMerchantName: true,
-                showOrderSummary: true,
-              },
-              textOptions: {
-                completePaymentButtonText: "pay",
-              },
-            },
-          },
-          notifications: {
-            webHooks: Object.values(PaymentWebhookEventEnum).map((value) => ({
-              eventName: value,
-              url: `${hostCallbackUrl}${webhookEndpoint}`,
-              authorization: `Wid ${this.webhookSecret}`,
-            })),
-          },
-        };
-
-        const { data: paymentIntentCreateResponse } =
-          await this.paymentApiClient.post<{
-            paymentId: string;
-            hostedPaymentPageUrl: string;
-          }>("/v1/payments", paymentIntentCreateDto);
-
-        paymentReceive = await this.paymentReceiveRepository.create({
-          totalPayable: booking.totalAmount,
-          totalDue: booking.totalAmount,
-          paymentIntentId: paymentIntentCreateResponse.paymentId,
-          paymentRedirectUrl: paymentIntentCreateResponse.hostedPaymentPageUrl,
-          createdBy: auditUserId,
-        });
-
-        this.cleaningBookingRepository.updateOneById(bookingId, {
-          paymentReceive: paymentReceive.id,
-          paymentStatus: CleaningBookingPaymentStatusEnum.PaymentInitiated,
-          updatedBy: auditUserId,
-        });
+        paymentReceive = await this.createPaymentReceive(
+          booking,
+          auditUserId,
+          paymentIntentCreateResponse,
+        );
       }
 
       const paymentIntentResponse = new PaymentIntentResponseDto();
@@ -178,100 +115,72 @@ export class PaymentReceiveService {
         paymentIntentResponse,
       );
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-
+      if (error instanceof HttpException) {
+        throw error;
+      }
       this.logger.error("Error in getPaymentIntent:", error);
       throw new BadRequestException("Failed to get payment intent");
     }
   }
 
-  async handleWebhookEvent(
-    request: RawBodyRequest<Request>,
-    signature: string,
-  ) {
-    this.logger.log({ request, signature });
-    // try {
-    //   if (!this.stripeWebhookSecret) {
-    //     throw new Error(
-    //       "Stripe webhook secret not found in the configuration.",
-    //     );
-    //   }
+  async handleWebhookEvent(request: Request): Promise<void> {
+    try {
+      const authHeader = request.get("authorization");
+      if (!authHeader) throw new BadRequestException("Unauthorized access");
 
-    //   const event = this.stripeService.webhooks.constructEvent(
-    //     request.rawBody as Buffer,
-    //     signature,
-    //     this.stripeWebhookSecret,
-    //   );
+      const decryptedWebhookSecret =
+        this.encryptionService.decryptString(authHeader);
+      if (decryptedWebhookSecret !== this.webhookSecret)
+        throw new BadRequestException("Invalid authorization token");
 
-    //   const bookingSpaceUpdates: UpdateQuery<SpaceBookingDocument> = {};
-    //   const paymentReceiveUpdates: UpdateQuery<PaymentReceiveDocument> = {};
+      const event: IPaymentWebhookEvent = request.body;
+      if (!event) throw new BadRequestException("Invalid webhook payload");
 
-    //   // Handle the Stripe event based on its type
-    //   switch (event.type) {
-    //     case "payment_intent.created":
-    //       bookingSpaceUpdates.bookingStatus =
-    //         SpaceBookingStatusEnum.PaymentCreated;
-    //       break;
+      const { event: eventType, data } = event;
+      switch (eventType) {
+        case PaymentWebhookEventEnum.PaymentCreated:
+          await this.handlePaymentCreated(data);
+          break;
+        case PaymentWebhookEventEnum.PaymentReservationFailed:
+          await this.handlePaymentReservationFailed(data);
+          break;
+        case PaymentWebhookEventEnum.PaymentCheckoutCompleted:
+          await this.handlePaymentCheckoutCompleted(data);
+          break;
+        case PaymentWebhookEventEnum.PaymentChargeCreatedV2:
+          await this.handlePaymentChargeCreatedV2(data);
+          break;
+        case PaymentWebhookEventEnum.PaymentChargeFailed:
+          await this.handlePaymentChargeFailed(data);
+          break;
+        default:
+          throw new Error("Invalid webhook event type");
+      }
+    } catch (error) {
+      this.logger.error("Error in handleWebhookEvent:", error);
+      throw new BadRequestException("Failed to handle webhook event");
+    }
+  }
 
-    //     case "payment_intent.succeeded":
-    //       bookingSpaceUpdates.bookingStatus =
-    //         SpaceBookingStatusEnum.PaymentCompleted;
+  //#region Internal private methods
+  private async getBookingWithPayment(
+    bookingId: string,
+  ): Promise<CleaningBookingDocument> {
+    const booking = await this.cleaningBookingRepository.getOneWhere(
+      {
+        _id: bookingId,
+        isActive: true,
+      },
+      {
+        populate: "paymentReceive",
+      },
+    );
+    if (!booking) {
+      this.logger.error(`Booking with ID ${bookingId} was not found.`);
+      throw new NotFoundException(`Booking with ID ${bookingId} not found.`);
+    }
 
-    //       const amountReceived = event.data?.object?.amount_received ?? 0;
-    //       const totalAmount = event.data?.object?.amount ?? 0;
-
-    //       if (isNaN(amountReceived) || isNaN(totalAmount)) {
-    //         throw new Error("Invalid amount values in the Stripe event.");
-    //       }
-
-    //       paymentReceiveUpdates.totalPaid = parseFloat(
-    //         (amountReceived / 100).toFixed(2),
-    //       );
-    //       paymentReceiveUpdates.totalDue = parseFloat(
-    //         ((totalAmount - amountReceived) / 100).toFixed(2),
-    //       );
-    //       break;
-
-    //     case "payment_intent.payment_failed":
-    //       bookingSpaceUpdates.bookingStatus =
-    //         SpaceBookingStatusEnum.PaymentFailed;
-    //       break;
-
-    //     default:
-    //       this.logger.log("Unhandled event type: " + event.type);
-    //   }
-
-    //   const paymentIntent = event.data.object as Stripe.PaymentIntent;
-    //   const intentMetadata = paymentIntent.metadata as StripeIntentMetadata;
-
-    //   if (intentMetadata.paymentReceiveId) {
-    //     paymentReceiveUpdates.lastPaymentEvent = JSON.stringify(
-    //       event.data?.object,
-    //     );
-
-    //     await this.paymentReceiveRepository.updateOneById(
-    //       intentMetadata.paymentReceiveId,
-    //       paymentReceiveUpdates,
-    //     );
-    //   }
-
-    //   if (
-    //     intentMetadata.bookingId &&
-    //     Object.keys(bookingSpaceUpdates).length > 0
-    //   ) {
-    //     await this.spaceBookingRepository.updateOneById(
-    //       intentMetadata.bookingId,
-    //       bookingSpaceUpdates,
-    //     );
-    //   }
-
-    //   return { received: true };
-    // } catch (error) {
-    //   this.logger.error("Error handling Stripe webhook event:", error);
-    //   throw new BadRequestException("Error in webhook event processing");
-    // }
-
-    throw new NotImplementedException("Method is not complete yet");
+    return booking;
   }
 
   private isInvalidForPG(url: string): boolean {
@@ -291,4 +200,183 @@ export class PaymentReceiveService {
       return true;
     }
   }
+
+  private getCallbackUrls(
+    hostUrl: string,
+    originUrl: string,
+    webhookEndpoint: string,
+  ): ICallbackUrls {
+    return {
+      websiteCallbackUrl: this.isInvalidForPG(originUrl)
+        ? this.staticWebsiteUrl
+        : originUrl,
+      webhookEventUrl: `${this.isInvalidForPG(hostUrl) ? this.staticServerUrl : hostUrl}${webhookEndpoint}`,
+    };
+  }
+
+  private constructPaymentIntentDto(
+    booking: CleaningBookingDocument,
+    callbackUrls: ICallbackUrls,
+  ): IPaymentIntentCreateDto {
+    return {
+      order: {
+        items: [
+          {
+            reference: booking.id,
+            name: `Reservation for cleaning on ${new Date(booking.cleaningDate).toDateString()}`,
+            quantity: 1,
+            unit: "Reservation",
+            unitPrice: booking.totalAmount * 100,
+            netTotalAmount: booking.totalAmount * 100,
+            grossTotalAmount: booking.totalAmount * 100,
+          },
+        ],
+        amount: booking.totalAmount * 100,
+        currency: "SEK",
+        reference: booking.id,
+      },
+      checkout: {
+        integrationType: "HostedPaymentPage",
+        returnUrl: `${callbackUrls.websiteCallbackUrl}/redirect-payment`,
+        termsUrl: `${callbackUrls.websiteCallbackUrl}/terms-and-conditions`,
+        charge: true,
+        publicDevice: true,
+        merchantHandlesConsumerData: true,
+        appearance: {
+          displayOptions: { showMerchantName: true, showOrderSummary: true },
+          textOptions: { completePaymentButtonText: "pay" },
+        },
+      },
+      notifications: {
+        webHooks: Object.values(PaymentWebhookEventEnum).map((value) => ({
+          eventName: value,
+          url: callbackUrls.webhookEventUrl,
+          authorization: this.encryptionService.encryptString(
+            this.webhookSecret,
+          ),
+        })),
+      },
+    };
+  }
+
+  private async createPaymentIntent(
+    paymentIntentCreateDto: IPaymentIntentCreateDto,
+  ): Promise<{ paymentId: string; hostedPaymentPageUrl: string }> {
+    const { data } = await this.paymentApiClient.post<{
+      paymentId: string;
+      hostedPaymentPageUrl: string;
+    }>("/v1/payments", paymentIntentCreateDto);
+
+    return data;
+  }
+
+  private async createPaymentReceive(
+    booking: CleaningBookingDocument,
+    auditUserId: string,
+    paymentIntentCreateResponse: {
+      paymentId: string;
+      hostedPaymentPageUrl: string;
+    },
+  ): Promise<PaymentReceiveDocument> {
+    const paymentReceive = await this.paymentReceiveRepository.create({
+      totalPayable: booking.totalAmount,
+      totalDue: booking.totalAmount,
+      paymentIntentId: paymentIntentCreateResponse.paymentId,
+      paymentRedirectUrl: paymentIntentCreateResponse.hostedPaymentPageUrl,
+      createdBy: auditUserId,
+    });
+
+    this.cleaningBookingRepository.updateOneById(booking.id, {
+      paymentReceive: paymentReceive.id,
+      paymentStatus: CleaningBookingPaymentStatusEnum.PaymentInitiated,
+      updatedBy: auditUserId,
+    });
+
+    return paymentReceive;
+  }
+
+  // Webhook handler heplers
+  private async handlePaymentCreated(
+    data: IPaymentWebhookEventData,
+  ): Promise<void> {
+    await this.updateBookingAndPaymentStatus(
+      data,
+      CleaningBookingPaymentStatusEnum.PaymentInitiated,
+    );
+  }
+
+  private async handlePaymentReservationFailed(
+    data: IPaymentWebhookEventData,
+  ): Promise<void> {
+    await this.updateBookingAndPaymentStatus(
+      data,
+      CleaningBookingPaymentStatusEnum.PaymentFailed,
+    );
+  }
+
+  private async handlePaymentCheckoutCompleted(
+    data: IPaymentWebhookEventData,
+  ): Promise<void> {
+    await this.updateBookingAndPaymentStatus(
+      data,
+      CleaningBookingPaymentStatusEnum.PaymentCompleted,
+    );
+  }
+
+  private async handlePaymentChargeCreatedV2(
+    data: IPaymentWebhookEventData,
+  ): Promise<void> {
+    await this.updateBookingAndPaymentStatus(
+      data,
+      CleaningBookingPaymentStatusEnum.PaymentCreated,
+    );
+  }
+
+  private async handlePaymentChargeFailed(
+    data: IPaymentWebhookEventData,
+  ): Promise<void> {
+    await this.updateBookingAndPaymentStatus(
+      data,
+      CleaningBookingPaymentStatusEnum.PaymentFailed,
+    );
+  }
+
+  private async updateBookingAndPaymentStatus(
+    data: IPaymentWebhookEventData,
+    paymentStatus: CleaningBookingPaymentStatusEnum,
+  ): Promise<void> {
+    const bookinId = data?.orderItems[0]?.reference;
+    if (!bookinId) throw new BadRequestException("Invalid booking id");
+
+    const booking = await this.getBookingWithPayment(bookinId);
+    const paymentReceive =
+      booking.paymentReceive as unknown as PaymentReceiveDocument;
+
+    if (!booking || !paymentReceive) {
+      this.logger.error("Invalid booking or payment receive");
+      throw new BadRequestException("Invalid booking or payment receive");
+    }
+
+    const paymentReceiveUpdate: UpdateQuery<PaymentReceiveDocument> = {
+      lastPaymentEvent: JSON.stringify(data),
+    };
+
+    if (paymentStatus === CleaningBookingPaymentStatusEnum.PaymentCompleted) {
+      const totalPaid = data.amount.amount / 100;
+      const totalDue = paymentReceive.totalDue - totalPaid;
+
+      paymentReceiveUpdate.totalDue = totalDue.toFixed(2);
+      paymentReceiveUpdate.totalPaid = totalPaid.toFixed(2);
+    }
+
+    await this.paymentReceiveRepository.updateOneById(
+      paymentReceive.id,
+      paymentReceiveUpdate,
+    );
+
+    await this.cleaningBookingRepository.updateOneById(booking.id, {
+      paymentStatus,
+    });
+  }
+  //#endregion
 }
