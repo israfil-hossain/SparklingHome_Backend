@@ -21,6 +21,12 @@ export interface IPaymentWebhookEventData {
     amount: number;
     currency: string;
   };
+  order: {
+    amount: {
+      amount: number;
+      currency: string;
+    };
+  };
   paymentId: string;
   chargeId?: string;
   paymentMethod?: string;

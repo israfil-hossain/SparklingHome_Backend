@@ -332,7 +332,8 @@ export class PaymentReceiveService {
     };
 
     if (paymentStatus === CleaningBookingPaymentStatusEnum.PaymentCompleted) {
-      const totalPaid = data.amount.amount / 100;
+      const payableAmount = data?.amount?.amount ?? data?.order?.amount?.amount;
+      const totalPaid = payableAmount / 100;
       const totalDue = paymentReceive.totalDue - totalPaid;
 
       paymentReceiveUpdate.totalDue = totalDue.toFixed(2);
