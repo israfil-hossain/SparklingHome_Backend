@@ -150,9 +150,12 @@ export class PaymentReceiveService {
       {
         _id: bookingId,
         isActive: true,
-        bookingStatus: { $ne: CleaningBookingStatusEnum.BookingCompleted },
+        bookingStatus: { $eq: CleaningBookingStatusEnum.BookingServed },
         paymentStatus: {
-          $ne: CleaningBookingPaymentStatusEnum.PaymentCompleted,
+          $nin: [
+            CleaningBookingPaymentStatusEnum.PaymentCompleted,
+            CleaningBookingPaymentStatusEnum.PaymentFailed,
+          ],
         },
       },
       {
@@ -161,10 +164,10 @@ export class PaymentReceiveService {
     );
     if (!booking) {
       this.logger.error(
-        `Booking with ID ${bookingId} was not found or has been paid.`,
+        `Booking with ID ${bookingId} was not found or not eligible for payment.`,
       );
       throw new NotFoundException(
-        `Booking with ID ${bookingId} not found or has been paid.`,
+        `Booking with ID ${bookingId} not found or not eligible for payment.`,
       );
     }
 
@@ -307,20 +310,20 @@ export class PaymentReceiveService {
     const paymentReceive = await this.paymentReceiveRepository.getOneWhere({
       paymentIntentId: data.paymentId,
     });
+
     if (!paymentReceive) {
       this.logger.error("Invalid payment receive");
       throw new BadRequestException("Invalid payment receive");
     }
 
     const booking = await this.cleaningBookingRepository.getOneWhere({
-      paymentReceive: paymentReceive.id,
       isActive: true,
-      bookingStatus: { $ne: CleaningBookingStatusEnum.BookingCompleted },
+      paymentReceive: paymentReceive.id,
     });
 
-    if (!booking || !paymentReceive) {
-      this.logger.error("Invalid booking or payment receive");
-      throw new BadRequestException("Invalid booking or booking already paid");
+    if (!booking) {
+      this.logger.error("Invalid booking for payment receive");
+      throw new BadRequestException("Invalid booking for payment receive");
     }
 
     const paymentReceiveUpdate: UpdateQuery<PaymentReceiveDocument> = {

@@ -101,6 +101,7 @@ export class AuthenticationService {
       const user = await this.applicationUserRepository.getOneWhere({
         email: signInDto.email,
         role: userRole ? userRole : ApplicationUserRoleEnum.USER,
+        isActive: true,
       });
 
       if (!user) {
@@ -166,6 +167,7 @@ export class AuthenticationService {
         {
           token: refreshToken,
           expiresAt: { $gt: new Date() },
+          isActive: true,
         },
         {
           populate: [
@@ -210,6 +212,7 @@ export class AuthenticationService {
       const refreshTokenDoc = await this.refreshTokenRepository.getOneWhere({
         token: refreshToken,
         expiresAt: { $gt: new Date() },
+        isActive: true,
       });
 
       if (!refreshTokenDoc) {

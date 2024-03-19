@@ -51,6 +51,12 @@ export class CleaningSubscriptionService {
       });
 
       if (existingUser) {
+        if (!existingUser.isActive) {
+          await this.applicationUserRepository.updateOneById(existingUser.id, {
+            isActive: true,
+          });
+        }
+
         const existingSubscription =
           await this.cleaningSubscriptionRepository.getOneWhere({
             subscribedUser: existingUser?.id,
