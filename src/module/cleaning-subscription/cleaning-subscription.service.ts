@@ -191,9 +191,31 @@ export class CleaningSubscriptionService {
             isActive: true,
           },
           {
-            populate: ["cleaningPrice", "currentBooking"],
+            populate: [
+              {
+                path: "subscribedUser",
+                select: "-role -isActive",
+                populate: "profilePicture",
+              },
+              {
+                path: "cleaningPrice",
+                select: "subscriptionFrequency subscriptionPrice description",
+              },
+              {
+                path: "cleaningCoupon",
+                select: "couponCode",
+              },
+              {
+                path: "currentBooking",
+                select: "-isActive -createdAt -createdBy -updatedAt -updatedBy",
+              },
+            ],
           },
         );
+
+      if (!subscription) {
+        throw new BadRequestException("No active subscription found");
+      }
 
       return new SuccessResponseDto(
         "Subscription fetched successfully",

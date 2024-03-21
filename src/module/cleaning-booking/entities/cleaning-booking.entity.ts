@@ -8,7 +8,13 @@ import { CleaningBookingStatusEnum } from "../enum/cleaning-booking-status.enum"
 export type CleaningBookingDocument = HydratedDocument<CleaningBooking>;
 export type CleaningBookingType = Model<CleaningBookingDocument>;
 
-@Schema()
+@Schema({
+  toJSON: {
+    transform: function (_, ret) {
+      delete ret?.paymentReceive;
+    },
+  },
+})
 export class CleaningBooking extends BaseEntity {
   @Prop({
     type: Date,

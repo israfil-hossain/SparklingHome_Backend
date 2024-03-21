@@ -14,6 +14,7 @@ import { CreateApplicationUserDto } from "./dto/create-application-user.dto";
 import { ListApplicationUserQuery } from "./dto/list-application-user-query.dto";
 import { UpdateApplicationUserProfilePictureDto } from "./dto/update-application-user-profile-picture.dto";
 import { UpdateApplicationUserDto } from "./dto/update-application-user.dto";
+import { ApplicationUserRoleEnum } from "./enum/application-user-role.enum";
 
 @Injectable()
 export class ApplicationUserService {
@@ -54,6 +55,8 @@ export class ApplicationUserService {
     try {
       // Search query setup
       const searchQuery: Record<string, any> = {};
+      searchQuery.role = ApplicationUserRoleEnum.USER;
+
       if (Email) {
         searchQuery["email"] = { $regex: Email, $options: "i" };
       }
@@ -69,6 +72,7 @@ export class ApplicationUserService {
       const result = await this.applicationUserRepository.getAll(searchQuery, {
         limit: PageSize,
         skip,
+        select: "-role",
       });
 
       return new PaginatedResponseDto(totalRecords, Page, PageSize, result);

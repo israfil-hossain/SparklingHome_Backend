@@ -10,6 +10,7 @@ export type ApplicationUserType = Model<ApplicationUserDocument>;
   toJSON: {
     transform: function (_, ret) {
       delete ret?.password;
+      delete ret?.role;
       delete ret?.isPasswordLess;
     },
   },
