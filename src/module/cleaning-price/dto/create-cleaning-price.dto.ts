@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsEnum, IsNotEmpty, IsNumber, IsOptional, Min } from "class-validator";
-import { CleaningSubscriptionFrequencyEnum } from "../enum/cleaning-subscription-frequency.enum";
+import { CleaningSubscriptionFrequencyEnum } from "../../cleaning-subscription/enum/cleaning-subscription-frequency.enum";
 
 export class CreateCleaningPriceDto {
   @ApiProperty({

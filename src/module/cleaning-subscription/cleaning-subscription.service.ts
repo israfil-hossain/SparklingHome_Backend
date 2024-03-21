@@ -5,6 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from "@nestjs/common";
+import { FilterQuery } from "mongoose";
 import { ApplicationUserRepository } from "../application-user/application-user.repository";
 import { ApplicationUserDocument } from "../application-user/entities/application-user.entity";
 import { ApplicationUserRoleEnum } from "../application-user/enum/application-user-role.enum";
@@ -21,6 +22,7 @@ import { EncryptionService } from "../encryption/encryption.service";
 import { CleaningSubscriptionRepository } from "./cleaning-subscription.repository";
 import { CreateCleaningSubscriptionDto } from "./dto/create-cleaning-subscription.dto";
 import { ListCleaningSubscriptionQueryDto } from "./dto/list-cleaning-subscription-query.dto";
+import { CleaningSubscriptionDocument } from "./entities/cleaning-subscription.entity";
 
 @Injectable()
 export class CleaningSubscriptionService {
@@ -43,6 +45,26 @@ export class CleaningSubscriptionService {
     createDto: CreateCleaningSubscriptionDto,
   ): Promise<SuccessResponseDto> {
     try {
+      const cleaningPrice = await this.cleaningPriceRepository.getOneWhere({
+        subscriptionFrequency: createDto.subscriptionFrequency,
+        isActive: true,
+      });
+
+      if (!cleaningPrice || !cleaningPrice.subscriptionPrice) {
+        throw new BadRequestException("Cleaning price not valid");
+      }
+
+      let cleaningCoupon: CleaningCouponDocument | null = null;
+      if (createDto?.cleaningCoupon) {
+        cleaningCoupon = await this.cleaningCouponRepository.getOneById(
+          createDto?.cleaningCoupon,
+        );
+
+        if (!cleaningCoupon || !cleaningCoupon.id) {
+          throw new BadRequestException("Cleaning coupon not valid");
+        }
+      }
+
       let subscriptionUser: ApplicationUserDocument;
 
       const existingUser = await this.applicationUserRepository.getOneWhere({
@@ -90,28 +112,9 @@ export class CleaningSubscriptionService {
         );
       }
 
-      const cleaningPrice = await this.cleaningPriceRepository.getOneById(
-        createDto.cleaningPrice,
-      );
-
-      if (!cleaningPrice || !cleaningPrice.subscriptionPrice) {
-        throw new BadRequestException("Cleaning price not valid");
-      }
-
-      let cleaningCoupon: CleaningCouponDocument | null = null;
-      if (createDto?.cleaningCoupon) {
-        cleaningCoupon = await this.cleaningCouponRepository.getOneById(
-          createDto?.cleaningCoupon,
-        );
-
-        if (!cleaningCoupon || !cleaningCoupon.id) {
-          throw new BadRequestException("Cleaning coupon not valid");
-        }
-      }
-
       const newSubscription = await this.cleaningSubscriptionRepository.create({
         ...createDto,
-        cleaningPrice: cleaningPrice.id,
+        subscriptionFrequency: createDto.subscriptionFrequency,
         cleaningCoupon: cleaningCoupon?.id,
         createdBy: subscriptionUser.id,
         subscribedUser: subscriptionUser.id,
@@ -198,10 +201,6 @@ export class CleaningSubscriptionService {
                 populate: "profilePicture",
               },
               {
-                path: "cleaningPrice",
-                select: "subscriptionFrequency subscriptionPrice description",
-              },
-              {
                 path: "cleaningCoupon",
                 select: "couponCode",
               },
@@ -233,13 +232,14 @@ export class CleaningSubscriptionService {
   async findAll({
     Page = 1,
     PageSize = 10,
+    Frequency,
   }: ListCleaningSubscriptionQueryDto): Promise<PaginatedResponseDto> {
     try {
       // Search query setup
-      const searchQuery: Record<string, any> = {};
-      // if (Email) {
-      //   searchQuery["email"] = { $regex: Email, $options: "i" };
-      // }
+      const searchQuery: FilterQuery<CleaningSubscriptionDocument> = {};
+      if (Frequency) {
+        searchQuery.subscriptionFrequency = Frequency;
+      }
 
       // Pagination setup
       const totalRecords =
@@ -283,10 +283,6 @@ export class CleaningSubscriptionService {
             path: "subscribedUser",
             select: "-role -isActive -password -isPasswordLess",
             populate: "profilePicture",
-          },
-          {
-            path: "cleaningPrice",
-            select: "subscriptionFrequency subscriptionPrice description",
           },
           {
             path: "cleaningCoupon",

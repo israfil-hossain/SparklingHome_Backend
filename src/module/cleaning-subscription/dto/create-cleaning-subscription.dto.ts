@@ -3,6 +3,7 @@ import {
   IsBoolean,
   IsDate,
   IsEmail,
+  IsEnum,
   IsMongoId,
   IsNotEmpty,
   IsNumber,
@@ -11,6 +12,7 @@ import {
   Min,
   MinDate,
 } from "class-validator";
+import { CleaningSubscriptionFrequencyEnum } from "../enum/cleaning-subscription-frequency.enum";
 
 export class CreateCleaningSubscriptionDto {
   @ApiProperty({ description: "Full Name", example: "John Doe" })
@@ -62,15 +64,6 @@ export class CreateCleaningSubscriptionDto {
   cleaningDurationInHours: number;
 
   @ApiProperty({
-    required: true,
-    description: "The ID of cleaning price",
-    example: "65e1719621d642d46e4c6390",
-  })
-  @IsNotEmpty({ message: "Cleaning price is required" })
-  @IsMongoId({ message: "Invalid cleaning price" })
-  cleaningPrice: string;
-
-  @ApiProperty({
     required: false,
     description: "The ID of cleaning coupon",
     example: "65e1719621d642d46e4c6390",
@@ -87,6 +80,17 @@ export class CreateCleaningSubscriptionDto {
   @IsDate({ message: "Start date must be a valid date" })
   @MinDate(new Date(), { message: "Start date must be in the future" })
   startDate: Date;
+
+  @ApiProperty({
+    enum: CleaningSubscriptionFrequencyEnum,
+    default: CleaningSubscriptionFrequencyEnum.WEEKLY,
+    description: "The frequency of the cleaning subscription.",
+  })
+  @IsNotEmpty({ message: "Subscription frequency is required" })
+  @IsEnum(CleaningSubscriptionFrequencyEnum, {
+    message: "Invalid subscription frequency",
+  })
+  subscriptionFrequency: CleaningSubscriptionFrequencyEnum;
 
   @ApiProperty({
     description: "Indicates if there are cats in the house",

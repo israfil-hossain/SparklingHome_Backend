@@ -3,8 +3,8 @@ import { HydratedDocument, Model, Types } from "mongoose";
 import { ApplicationUser } from "../../application-user/entities/application-user.entity";
 import { CleaningBooking } from "../../cleaning-booking/entities/cleaning-booking.entity";
 import { CleaningCoupon } from "../../cleaning-coupon/entities/cleaning-coupon.entity";
-import { CleaningPrice } from "../../cleaning-price/entities/cleaning-price.entity";
 import { BaseEntity } from "../../common/entities/base.entity";
+import { CleaningSubscriptionFrequencyEnum } from "../enum/cleaning-subscription-frequency.enum";
 
 @Schema()
 export class CleaningSubscription extends BaseEntity {
@@ -29,10 +29,10 @@ export class CleaningSubscription extends BaseEntity {
 
   @Prop({
     required: true,
-    type: Types.ObjectId,
-    ref: CleaningPrice.name,
+    type: String,
+    enum: Object.values(CleaningSubscriptionFrequencyEnum),
   })
-  cleaningPrice: string;
+  subscriptionFrequency: CleaningSubscriptionFrequencyEnum;
 
   @Prop({
     default: null,

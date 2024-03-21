@@ -4,11 +4,11 @@ import {
   Injectable,
   Logger,
 } from "@nestjs/common";
+import { CleaningSubscriptionFrequencyEnum } from "../cleaning-subscription/enum/cleaning-subscription-frequency.enum";
 import { IdNameResponseDto } from "../common/dto/id-name-respones.dto";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { CleaningPriceRepository } from "./cleaning-price.repository";
 import { CreateCleaningPriceDto } from "./dto/create-cleaning-price.dto";
-import { CleaningSubscriptionFrequencyEnum } from "./enum/cleaning-subscription-frequency.enum";
 
 @Injectable()
 export class CleaningPriceService {
