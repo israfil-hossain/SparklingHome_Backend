@@ -194,7 +194,7 @@ export class CleaningSubscriptionService {
             populate: [
               {
                 path: "subscribedUser",
-                select: "-role -isActive",
+                select: "-role -isActive -password -isPasswordLess",
                 populate: "profilePicture",
               },
               {
@@ -207,7 +207,8 @@ export class CleaningSubscriptionService {
               },
               {
                 path: "currentBooking",
-                select: "-isActive -createdAt -createdBy -updatedAt -updatedBy",
+                select:
+                  "-isActive -createdAt -createdBy -updatedAt -updatedBy -paymentReceive",
               },
             ],
           },
@@ -253,7 +254,13 @@ export class CleaningSubscriptionService {
           populate: [
             {
               path: "subscribedUser",
-              select: "email fullName profilePicture isActive",
+              select: "-role -isActive -password -isPasswordLess",
+              populate: "profilePicture",
+            },
+            {
+              path: "currentBooking",
+              select:
+                "-isActive -createdAt -createdBy -updatedAt -updatedBy -paymentReceive",
             },
           ],
         },
@@ -274,16 +281,21 @@ export class CleaningSubscriptionService {
         populate: [
           {
             path: "subscribedUser",
-            select: "-password",
+            select: "-role -isActive -password -isPasswordLess",
+            populate: "profilePicture",
           },
           {
             path: "cleaningPrice",
+            select: "subscriptionFrequency subscriptionPrice description",
           },
           {
             path: "cleaningCoupon",
+            select: "couponCode",
           },
           {
             path: "currentBooking",
+            select:
+              "-isActive -createdAt -createdBy -updatedAt -updatedBy -paymentReceive",
           },
         ],
       });
