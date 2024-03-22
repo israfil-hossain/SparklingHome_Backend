@@ -229,6 +229,53 @@ export class CleaningSubscriptionService {
     }
   }
 
+  async cancelSubscription(
+    { userId, userRole }: ITokenPayload,
+    subscriptionId: string,
+  ): Promise<SuccessResponseDto> {
+    try {
+      const subscriptionQuery: FilterQuery<CleaningSubscriptionDocument> = {
+        _id: subscriptionId,
+      };
+
+      if (userRole !== ApplicationUserRoleEnum.ADMIN) {
+        subscriptionQuery.subscribedUser = userId;
+      }
+
+      const subscription =
+        await this.cleaningSubscriptionRepository.getOneWhere(
+          subscriptionQuery,
+        );
+
+      if (!subscription)
+        throw new BadRequestException(
+          "No active subscription found with id: " + subscriptionId,
+        );
+
+      await this.cleaningSubscriptionRepository.updateOneById(subscription.id, {
+        isActive: false,
+        updatedBy: userId,
+      });
+
+      if (subscription.currentBooking) {
+        await this.cleaningBookingRepository.updateOneById(
+          subscription.currentBooking,
+          {
+            isActive: false,
+            updatedBy: userId,
+          },
+        );
+      }
+
+      return new SuccessResponseDto("Subscription cancelled successfully");
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+
+      this.logger.error("Error cancelling subscription:", error);
+      throw new BadRequestException("Could not cancel subscription");
+    }
+  }
+
   async findAll({
     Page = 1,
     PageSize = 10,
