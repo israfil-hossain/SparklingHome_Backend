@@ -80,10 +80,13 @@ export class CleaningBookingService {
         );
       }
 
-      if (
-        bookingUpdateDto.markAsServed &&
-        currentBooking.bookingStatus !== CleaningBookingStatusEnum.BookingServed
-      ) {
+      if (bookingUpdateDto.markAsServed) {
+        if (
+          currentBooking.bookingStatus ===
+          CleaningBookingStatusEnum.BookingServed
+        )
+          throw new BadRequestException("Booking is already marked as served");
+
         updateQuery.bookingStatus = CleaningBookingStatusEnum.BookingServed;
         this.logger.log("Sending email to customer");
         const bookingUser =
