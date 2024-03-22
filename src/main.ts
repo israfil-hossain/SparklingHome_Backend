@@ -8,9 +8,7 @@ import { configureSwaggerUI } from "./config/swagger.config";
 const logger = new Logger("Glansandehem");
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    rawBody: true,
-  });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.setGlobalPrefix("api");
 
@@ -18,8 +16,8 @@ async function bootstrap() {
     origin: true,
   });
 
-  const configService = app.get(ConfigService);
-  const port = parseInt(configService.get("PORT", "4000"), 10);
+  const cfg = app.get(ConfigService);
+  const port = parseInt(cfg.get("PORT", "4000"), 10);
   configureSwaggerUI(app);
 
   await app.listen(port);

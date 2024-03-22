@@ -11,14 +11,12 @@ export const mongooseConfig: MongooseModuleAsyncOptions = {
     configService: ConfigService,
   ): Promise<MongooseModuleOptions> => {
     const DATABASE_NAME = "sparkling-home";
-    const mongoURI =
-      configService.get<string>(
-        configService.get<string>("NODE_ENV") === "production"
-          ? "MONGO_URI"
-          : "MONGO_DEV_URI",
-      ) || "mongodb://localhost:27017";
+    const isProd = configService.get<string>("NODE_ENV") === "production";
+    const mongoUri = isProd
+      ? configService.get<string>("MONGO_URI", "")
+      : configService.get<string>("MONGO_DEV_URI", "mongodb://localhost:27017");
 
-    const url = new URL(mongoURI);
+    const url = new URL(mongoUri);
     url.pathname = url.pathname.endsWith("/")
       ? `${url.pathname}${DATABASE_NAME}`
       : `${url.pathname}/${DATABASE_NAME}`;
