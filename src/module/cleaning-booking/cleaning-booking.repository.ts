@@ -47,12 +47,6 @@ export class CleaningBookingRepository extends GenericRepository<CleaningBooking
               },
             },
           },
-          {
-            $project: {
-              subscriptionFrequency: 1,
-              isActive: 1,
-            },
-          },
         ],
         as: "subscription",
       })

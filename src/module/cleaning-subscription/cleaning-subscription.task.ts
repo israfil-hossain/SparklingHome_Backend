@@ -1,19 +1,16 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
-import { ObjectId } from "mongodb";
 import { CleaningBookingRepository } from "../cleaning-booking/cleaning-booking.repository";
 import { CleaningBookingDocument } from "../cleaning-booking/entities/cleaning-booking.entity";
-import { CleaningBookingPaymentStatusEnum } from "../cleaning-booking/enum/cleaning-booking-payment-status.enum";
-import { CleaningBookingStatusEnum } from "../cleaning-booking/enum/cleaning-booking-status.enum";
+import { CleaningCouponRepository } from "../cleaning-coupon/cleaning-coupon.repository";
 import { EmailService } from "../email/email.service";
 import { CleaningSubscriptionRepository } from "./cleaning-subscription.repository";
+import { CleaningSubscriptionService } from "./cleaning-subscription.service";
+import { CleaningSubscriptionDocument } from "./entities/cleaning-subscription.entity";
 import { CleaningSubscriptionFrequencyEnum } from "./enum/cleaning-subscription-frequency.enum";
 
 interface ICleaningBookingWithSubscription extends CleaningBookingDocument {
-  subscription: {
-    subscriptionFrequency: CleaningSubscriptionFrequencyEnum;
-    _id: ObjectId;
-  };
+  subscription: CleaningSubscriptionDocument;
   bookingUserInfo: {
     email: string;
     fullName: string;
@@ -28,6 +25,8 @@ export class CleaningSubscriptionTask {
 
   constructor(
     private readonly cleaningSubscriptionRepository: CleaningSubscriptionRepository,
+    private readonly cleaningSubscriptionService: CleaningSubscriptionService,
+    private readonly cleaningCouponRepository: CleaningCouponRepository,
     private readonly cleaningBookingRepository: CleaningBookingRepository,
     private readonly emailService: EmailService,
   ) {}
@@ -76,29 +75,26 @@ export class CleaningSubscriptionTask {
       if (!booking.subscription) {
         throw new Error("Booking does not have a subscription");
       }
+      const subscription = booking.subscription;
 
-      const { _id: subscriptionId, subscriptionFrequency } =
-        booking.subscription;
-
-      if (subscriptionFrequency === CleaningSubscriptionFrequencyEnum.ONETIME) {
-        throw new Error("Cannot renew a one-time subscription");
-      }
+      const cleaningCoupon = await this.cleaningCouponRepository.getOneById(
+        subscription.cleaningCoupon,
+      );
 
       const nextScheduleDate = this.getNextScheduleDate(
         booking.cleaningDate,
-        subscriptionFrequency,
+        subscription.subscriptionFrequency,
       );
 
-      const newBooking = await this.cleaningBookingRepository.create({
-        ...booking.toObject(),
-        cleaningDate: nextScheduleDate,
-        bookingStatus: CleaningBookingStatusEnum.BookingInitiated,
-        paymentStatus: CleaningBookingPaymentStatusEnum.PaymentPending,
-        paymentReceive: null,
-      });
+      const newBooking =
+        await this.cleaningSubscriptionService.createBookingFromSubscription(
+          subscription,
+          cleaningCoupon,
+          nextScheduleDate,
+        );
 
       await this.cleaningSubscriptionRepository.updateOneById(
-        subscriptionId.toString(),
+        subscription?._id?.toString(),
         {
           currentBooking: newBooking.id,
           updatedAt: new Date(),

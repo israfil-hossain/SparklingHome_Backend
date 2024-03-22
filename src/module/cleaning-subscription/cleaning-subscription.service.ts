@@ -10,6 +10,7 @@ import { ApplicationUserRepository } from "../application-user/application-user.
 import { ApplicationUserDocument } from "../application-user/entities/application-user.entity";
 import { ApplicationUserRoleEnum } from "../application-user/enum/application-user-role.enum";
 import { CleaningBookingRepository } from "../cleaning-booking/cleaning-booking.repository";
+import { CleaningBookingDocument } from "../cleaning-booking/entities/cleaning-booking.entity";
 import { CleaningBookingStatusEnum } from "../cleaning-booking/enum/cleaning-booking-status.enum";
 import { CleaningCouponRepository } from "../cleaning-coupon/cleaning-coupon.repository";
 import { CleaningCouponDocument } from "../cleaning-coupon/entities/cleaning-coupon.entity";
@@ -90,26 +91,6 @@ export class CleaningSubscriptionService {
     createDto: CreateCleaningSubscriptionDto,
   ): Promise<SuccessResponseDto> {
     try {
-      const cleaningPrice = await this.cleaningPriceRepository.getOneWhere({
-        subscriptionFrequency: createDto.subscriptionFrequency,
-        isActive: true,
-      });
-
-      if (!cleaningPrice || !cleaningPrice.subscriptionPrice) {
-        throw new BadRequestException("Cleaning price not valid");
-      }
-
-      let cleaningCoupon: CleaningCouponDocument | null = null;
-      if (createDto?.cleaningCoupon) {
-        cleaningCoupon = await this.cleaningCouponRepository.getOneById(
-          createDto?.cleaningCoupon,
-        );
-
-        if (!cleaningCoupon || !cleaningCoupon.id) {
-          throw new BadRequestException("Cleaning coupon not valid");
-        }
-      }
-
       let subscriptionUser: ApplicationUserDocument;
 
       const existingUser = await this.applicationUserRepository.getOneWhere({
@@ -157,53 +138,30 @@ export class CleaningSubscriptionService {
         );
       }
 
+      let cleaningCoupon: CleaningCouponDocument | null = null;
+      if (createDto?.cleaningCoupon) {
+        cleaningCoupon = await this.cleaningCouponRepository.getOneById(
+          createDto?.cleaningCoupon,
+        );
+
+        if (!cleaningCoupon || !cleaningCoupon.id) {
+          throw new BadRequestException("Cleaning coupon not valid");
+        }
+      }
+
       const newSubscription = await this.cleaningSubscriptionRepository.create({
         ...createDto,
-        subscriptionFrequency: createDto.subscriptionFrequency,
         cleaningCoupon: cleaningCoupon?.id,
+        subscriptionFrequency: createDto.subscriptionFrequency,
         createdBy: subscriptionUser.id,
         subscribedUser: subscriptionUser.id,
       });
 
       try {
-        const latestConfig = await this.configurationRepository.getOneWhere(
-          {},
-          { sort: { updatedAt: -1, createdAt: -1 } },
+        const newBooking = await this.createBookingFromSubscription(
+          newSubscription,
+          cleaningCoupon,
         );
-
-        // Price calculations
-        const cleaningDurationInHours = newSubscription.cleaningDurationInHours;
-        const cleaningPricePerHour = cleaningPrice.subscriptionPrice;
-        const totalCleaningPrice =
-          cleaningDurationInHours * cleaningPricePerHour;
-
-        // Coupon Discount Calculations
-        let couponDiscountAmount = 0;
-        if (cleaningCoupon) {
-          const discountAmount =
-            totalCleaningPrice * (cleaningCoupon.discountPercentage / 100);
-          couponDiscountAmount = Math.min(
-            discountAmount,
-            cleaningCoupon.maximumDiscount,
-          );
-        }
-
-        // Final Cleaning Price Calculations
-        const suppliesChargeAmount = latestConfig?.suppliesCharge ?? 0;
-        const finalCleaningPrice = Math.ceil(
-          totalCleaningPrice + suppliesChargeAmount - couponDiscountAmount,
-        );
-
-        const newBooking = await this.cleaningBookingRepository.create({
-          bookingUser: subscriptionUser.id,
-          cleaningDate: newSubscription.startDate,
-          cleaningDuration: cleaningDurationInHours,
-          cleaningPrice: totalCleaningPrice,
-          discountAmount: couponDiscountAmount,
-          suppliesCharges: suppliesChargeAmount,
-          totalAmount: finalCleaningPrice,
-          createdBy: subscriptionUser.id,
-        });
 
         await this.cleaningSubscriptionRepository.updateOneById(
           newSubscription.id,
@@ -361,4 +319,58 @@ export class CleaningSubscriptionService {
       throw new BadRequestException("Could not get document with id: " + id);
     }
   }
+
+  //#region Shared internal methods
+  async createBookingFromSubscription(
+    subscription: CleaningSubscriptionDocument,
+    coupon?: CleaningCouponDocument | null,
+    cleaningDate?: Date | null,
+  ): Promise<CleaningBookingDocument> {
+    const cleaningPrice = await this.cleaningPriceRepository.getOneWhere({
+      subscriptionFrequency: subscription.subscriptionFrequency,
+      isActive: true,
+    });
+
+    if (!cleaningPrice || !cleaningPrice.subscriptionPrice) {
+      throw new BadRequestException("Cleaning price not valid");
+    }
+
+    const latestConfig = await this.configurationRepository.getOneWhere(
+      {},
+      { sort: { updatedAt: -1, createdAt: -1 } },
+    );
+
+    // Price calculations
+    const cleaningDurationInHours = subscription.cleaningDurationInHours;
+    const cleaningPricePerHour = cleaningPrice.subscriptionPrice;
+    const totalCleaningPrice = cleaningDurationInHours * cleaningPricePerHour;
+
+    // Coupon Discount Calculations
+    let couponDiscountAmount = 0;
+    if (coupon) {
+      const discountAmount =
+        totalCleaningPrice * (coupon.discountPercentage / 100);
+      couponDiscountAmount = Math.min(discountAmount, coupon.maximumDiscount);
+    }
+
+    // Final Cleaning Price Calculations
+    const suppliesChargeAmount = latestConfig?.suppliesCharge ?? 0;
+    const finalCleaningPrice = Math.ceil(
+      totalCleaningPrice + suppliesChargeAmount - couponDiscountAmount,
+    );
+
+    const newBooking = await this.cleaningBookingRepository.create({
+      bookingUser: subscription.subscribedUser,
+      cleaningDate: cleaningDate ?? subscription.startDate,
+      cleaningDuration: cleaningDurationInHours,
+      cleaningPrice: totalCleaningPrice,
+      discountAmount: couponDiscountAmount,
+      suppliesCharges: suppliesChargeAmount,
+      totalAmount: finalCleaningPrice,
+      createdBy: subscription.subscribedUser,
+    });
+
+    return newBooking;
+  }
+  //#endregion
 }
