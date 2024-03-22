@@ -7,14 +7,12 @@ import {
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import axios, { AxiosInstance } from "axios";
-import type { Request } from "express";
 import { UpdateQuery } from "mongoose";
 import { CleaningBookingRepository } from "../cleaning-booking/cleaning-booking.repository";
 import { CleaningBookingDocument } from "../cleaning-booking/entities/cleaning-booking.entity";
 import { CleaningBookingPaymentStatusEnum } from "../cleaning-booking/enum/cleaning-booking-payment-status.enum";
 import { CleaningBookingStatusEnum } from "../cleaning-booking/enum/cleaning-booking-status.enum";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
-import { EncryptionService } from "../encryption/encryption.service";
 import { PaymentIntentResponseDto } from "./dto/payment-intent-response.dto";
 import { PaymentReceiveDocument } from "./entities/payment-receive.entity";
 import { PaymentWebhookEventEnum } from "./enum/payment-webhook-event.enum";
@@ -36,17 +34,16 @@ export class PaymentReceiveService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly encryptionService: EncryptionService,
     private readonly paymentReceiveRepository: PaymentReceiveRepository,
     private readonly cleaningBookingRepository: CleaningBookingRepository,
   ) {
     this.staticServerUrl = this.configService.get(
       "SERVER_URL",
-      "https://sparkling-home-api.vercel.app",
+      "https://api.app.glansandehem.se",
     );
     this.staticWebsiteUrl = this.configService.get(
       "WEBSITE_URL",
-      "https://glansandehem.vercel.app",
+      "https://app.glansandehem.se",
     );
     this.webhookSecret = this.configService.get(
       "NEXI_WEBHOOK_SECRET",
@@ -113,13 +110,14 @@ export class PaymentReceiveService {
     }
   }
 
-  async handleWebhookEvent(request: Request): Promise<void> {
+  async handleWebhookEvent(
+    signature: string,
+    event: IPaymentWebhookEvent,
+  ): Promise<void> {
     try {
-      const authHeader = request.get("authorization");
-      if (!authHeader || authHeader !== this.webhookSecret)
+      if (!signature || signature !== this.webhookSecret)
         throw new BadRequestException("Unauthorized access");
 
-      const event: IPaymentWebhookEvent = request.body;
       if (!event) throw new BadRequestException("Invalid webhook payload");
 
       const { event: eventType, data } = event;
@@ -228,7 +226,7 @@ export class PaymentReceiveService {
       },
       checkout: {
         integrationType: "HostedPaymentPage",
-        returnUrl: `${callbackUrls.websiteCallbackUrl}/redirect-payment`,
+        returnUrl: `${callbackUrls.websiteCallbackUrl}/profile`,
         termsUrl: `${callbackUrls.websiteCallbackUrl}/terms-and-conditions`,
         charge: true,
         publicDevice: true,

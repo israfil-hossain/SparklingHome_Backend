@@ -1,6 +1,13 @@
-import { Controller, Get, HttpCode, Param, Post, Req } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  HttpCode,
+  Param,
+  Post,
+} from "@nestjs/common";
 import { ApiExcludeEndpoint, ApiResponse, ApiTags } from "@nestjs/swagger";
-import type { Request } from "express";
 import {
   HostHeader,
   OriginHeader,
@@ -9,6 +16,7 @@ import { AuthUserId } from "../authentication/decorator/auth-user-id.decorator";
 import { IsPublic } from "../authentication/guard/authentication.guard";
 import { DocIdQueryDto } from "../common/dto/doc-id-query.dto";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
+import { IPaymentWebhookEvent } from "./interface/payment-webhook-event.interface";
 import { PaymentReceiveService } from "./payment-receive.service";
 
 @ApiTags("Payment Receive")
@@ -41,7 +49,10 @@ export class PaymentReceiveController {
   @HttpCode(200)
   @IsPublic()
   @ApiExcludeEndpoint()
-  async handleWebhookEvent(@Req() request: Request): Promise<void> {
-    await this.paymentService.handleWebhookEvent(request);
+  async handleWebhookEvent(
+    @Headers("authorization") signature: string,
+    @Body() event: IPaymentWebhookEvent,
+  ): Promise<void> {
+    await this.paymentService.handleWebhookEvent(signature, event);
   }
 }

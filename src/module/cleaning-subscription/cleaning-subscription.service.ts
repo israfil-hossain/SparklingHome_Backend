@@ -309,20 +309,4 @@ export class CleaningSubscriptionService {
       throw new BadRequestException("Could not get document with id: " + id);
     }
   }
-
-  // async update(id: string, updateUserDto: UpdateApplicationUserDto) {
-  //   try {
-  //     const result = await this.cleaningSubscriptionRepository.updateOneById(
-  //       id,
-  //       updateUserDto,
-  //     );
-
-  //     return new SuccessResponseDto("User updated successfully", result);
-  //   } catch (error) {
-  //     if (error instanceof HttpException) throw error;
-
-  //     this.logger.error("Error updating new document:", error.description);
-  //     throw new BadRequestException("Error updating new document");
-  //   }
-  // }
 }
