@@ -27,6 +27,7 @@ export class EmailService {
         template: "./signin",
         context: {
           companyName: this.companyName,
+          companyWebsite: this.staticWebsiteUrl,
           userName: userName || "",
           userEmail: userEmail || "",
         },
@@ -45,6 +46,7 @@ export class EmailService {
         template: "./signup",
         context: {
           companyName: this.companyName,
+          companyWebsite: this.staticWebsiteUrl,
           userName: userName || "",
           userEmail: userEmail || "",
         },
@@ -67,6 +69,7 @@ export class EmailService {
         template: "./signup",
         context: {
           companyName: this.companyName,
+          companyWebsite: this.staticWebsiteUrl,
           userName: userName || "",
           userEmail: userEmail || "",
           userPassword: userPassword || "",
@@ -90,6 +93,7 @@ export class EmailService {
         template: "./reset-password",
         context: {
           companyName: this.companyName,
+          companyWebsite: this.staticWebsiteUrl,
           userName: userName || "",
           resetLink: resetLink || "",
         },
