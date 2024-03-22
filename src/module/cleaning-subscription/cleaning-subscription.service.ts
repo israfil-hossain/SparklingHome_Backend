@@ -195,6 +195,7 @@ export class CleaningSubscriptionService {
         );
 
         const newBooking = await this.cleaningBookingRepository.create({
+          bookingUser: subscriptionUser.id,
           cleaningDate: newSubscription.startDate,
           cleaningDuration: cleaningDurationInHours,
           cleaningPrice: totalCleaningPrice,

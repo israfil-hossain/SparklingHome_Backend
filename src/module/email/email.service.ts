@@ -1,12 +1,23 @@
 import { MailerService } from "@nestjs-modules/mailer";
 import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { CleaningBookingDocument } from "../cleaning-booking/entities/cleaning-booking.entity";
 
 @Injectable()
 export class EmailService {
   private readonly logger: Logger = new Logger(EmailService.name);
   private readonly companyName: string = "Glansandehem";
+  private readonly staticWebsiteUrl: string;
 
-  constructor(private mailerService: MailerService) {}
+  constructor(
+    private mailerService: MailerService,
+    private readonly configService: ConfigService,
+  ) {
+    this.staticWebsiteUrl = this.configService.get(
+      "WEBSITE_URL",
+      "https://app.glansandehem.se",
+    );
+  }
 
   async sendUserSigninMail(userEmail: string, userName: string = "User") {
     try {
@@ -88,6 +99,39 @@ export class EmailService {
       );
     } catch (error) {
       this.logger.error("Failed to send Forget Password email: " + error);
+    }
+  }
+
+  async sendBookingServedMail(
+    userEmail: string,
+    userName: string = "User",
+    booking: CleaningBookingDocument,
+  ) {
+    try {
+      await this.mailerService.sendMail({
+        to: userEmail,
+        subject: "Payment Required for Your Cleaning Service",
+        template: "./booking-served",
+        context: {
+          companyName: this.companyName,
+          companyWebsite: this.staticWebsiteUrl,
+          userName: userName || "",
+          cleaningDate: new Date(booking.cleaningDate).toDateString(),
+          cleaningDuration: booking.cleaningDuration,
+          cleaningPrice: booking.cleaningPrice,
+          suppliesCharges: booking.suppliesCharges,
+          discountAmount: booking.discountAmount,
+          vatAmount: booking.vatAmount,
+          additionalCharges: booking.additionalCharges,
+          totalAmount: booking.totalAmount,
+          remarks: booking.remarks || "",
+        },
+      });
+      this.logger.log(
+        "Booking served email sent successfully to: " + userEmail,
+      );
+    } catch (error) {
+      this.logger.error("Failed to send booking served email: " + error);
     }
   }
 }

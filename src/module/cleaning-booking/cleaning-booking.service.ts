@@ -5,6 +5,7 @@ import {
   Logger,
 } from "@nestjs/common";
 import { UpdateQuery } from "mongoose";
+import { ApplicationUserDocument } from "../application-user/entities/application-user.entity";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { EmailService } from "../email/email.service";
 import { CleaningBookingRepository } from "./cleaning-booking.repository";
@@ -31,19 +32,24 @@ export class CleaningBookingService {
       if (Object.keys(bookingUpdateDto).length < 1)
         throw new BadRequestException("No fields to update");
 
-      const currentBooking = await this.cleaningBookingRepository.getOneWhere({
-        _id: bookingId,
-        isActive: true,
-        bookingStatus: {
-          $nin: [
-            CleaningBookingStatusEnum.BookingCancelled,
-            CleaningBookingStatusEnum.BookingCompleted,
-          ],
+      const currentBooking = await this.cleaningBookingRepository.getOneWhere(
+        {
+          _id: bookingId,
+          isActive: true,
+          bookingStatus: {
+            $nin: [
+              CleaningBookingStatusEnum.BookingCancelled,
+              CleaningBookingStatusEnum.BookingCompleted,
+            ],
+          },
+          paymentStatus: {
+            $ne: CleaningBookingPaymentStatusEnum.PaymentCompleted,
+          },
         },
-        paymentStatus: {
-          $ne: CleaningBookingPaymentStatusEnum.PaymentCompleted,
+        {
+          populate: "bookingUser",
         },
-      });
+      );
 
       if (!currentBooking)
         throw new BadRequestException(
@@ -80,6 +86,13 @@ export class CleaningBookingService {
       ) {
         updateQuery.bookingStatus = CleaningBookingStatusEnum.BookingServed;
         this.logger.log("Sending email to customer");
+        const bookingUser =
+          currentBooking.bookingUser as unknown as ApplicationUserDocument;
+        this.emailService.sendBookingServedMail(
+          bookingUser.email,
+          bookingUser.fullName,
+          currentBooking,
+        );
       }
 
       const updatedBooking = await this.cleaningBookingRepository.updateOneById(

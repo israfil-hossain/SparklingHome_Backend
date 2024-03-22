@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, Model, Types } from "mongoose";
+import { ApplicationUser } from "../../application-user/entities/application-user.entity";
 import { BaseEntity } from "../../common/entities/base.entity";
 import { PaymentReceive } from "../../payment-receive/entities/payment-receive.entity";
 import { CleaningBookingPaymentStatusEnum } from "../enum/cleaning-booking-payment-status.enum";
@@ -16,6 +17,13 @@ export type CleaningBookingType = Model<CleaningBookingDocument>;
   },
 })
 export class CleaningBooking extends BaseEntity {
+  @Prop({
+    required: true,
+    type: Types.ObjectId,
+    ref: ApplicationUser.name,
+  })
+  bookingUser: string;
+
   @Prop({
     type: Date,
     required: true,
