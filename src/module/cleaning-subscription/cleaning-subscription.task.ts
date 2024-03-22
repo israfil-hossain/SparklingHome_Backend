@@ -3,6 +3,8 @@ import { Cron, CronExpression } from "@nestjs/schedule";
 import { ObjectId } from "mongodb";
 import { CleaningBookingRepository } from "../cleaning-booking/cleaning-booking.repository";
 import { CleaningBookingDocument } from "../cleaning-booking/entities/cleaning-booking.entity";
+import { CleaningBookingPaymentStatusEnum } from "../cleaning-booking/enum/cleaning-booking-payment-status.enum";
+import { CleaningBookingStatusEnum } from "../cleaning-booking/enum/cleaning-booking-status.enum";
 import { EmailService } from "../email/email.service";
 import { CleaningSubscriptionRepository } from "./cleaning-subscription.repository";
 import { CleaningSubscriptionFrequencyEnum } from "./enum/cleaning-subscription-frequency.enum";
@@ -30,7 +32,7 @@ export class CleaningSubscriptionTask {
     private readonly emailService: EmailService,
   ) {}
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_4_HOURS)
   async subscriptionUpdateTask() {
     if (this.isTaskRunning) return;
 
@@ -90,6 +92,9 @@ export class CleaningSubscriptionTask {
       const newBooking = await this.cleaningBookingRepository.create({
         ...booking.toObject(),
         cleaningDate: nextScheduleDate,
+        bookingStatus: CleaningBookingStatusEnum.BookingInitiated,
+        paymentStatus: CleaningBookingPaymentStatusEnum.PaymentPending,
+        paymentReceive: null,
       });
 
       await this.cleaningSubscriptionRepository.updateOneById(

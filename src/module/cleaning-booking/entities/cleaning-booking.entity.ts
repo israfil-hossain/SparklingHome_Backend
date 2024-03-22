@@ -74,7 +74,7 @@ export class CleaningBooking extends BaseEntity {
     ref: PaymentReceive.name,
     default: null,
   })
-  paymentReceive: string;
+  paymentReceive: string | null;
 }
 
 export const CleaningBookingSchema =
