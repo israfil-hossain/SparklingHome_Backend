@@ -123,13 +123,22 @@ export class PaymentReceiveService {
       const { event: eventType, data } = event;
       switch (eventType) {
         case PaymentWebhookEventEnum.PaymentReservationFailed:
-          await this.handlePaymentFailed(data);
+          await this.updateBookingAndPaymentStatus(
+            data,
+            CleaningBookingPaymentStatusEnum.PaymentFailed,
+          );
           break;
         case PaymentWebhookEventEnum.PaymentChargeFailed:
-          await this.handlePaymentFailed(data);
+          await this.updateBookingAndPaymentStatus(
+            data,
+            CleaningBookingPaymentStatusEnum.PaymentFailed,
+          );
           break;
         case PaymentWebhookEventEnum.PaymentCheckoutCompleted:
-          await this.handlePaymentCompleted(data);
+          await this.updateBookingAndPaymentStatus(
+            data,
+            CleaningBookingPaymentStatusEnum.PaymentCompleted,
+          );
           break;
         default:
           throw new Error("Invalid webhook event type");
@@ -283,24 +292,6 @@ export class PaymentReceiveService {
   }
 
   // Webhook handler heplers
-  private async handlePaymentFailed(
-    data: IPaymentWebhookEventData,
-  ): Promise<void> {
-    await this.updateBookingAndPaymentStatus(
-      data,
-      CleaningBookingPaymentStatusEnum.PaymentFailed,
-    );
-  }
-
-  private async handlePaymentCompleted(
-    data: IPaymentWebhookEventData,
-  ): Promise<void> {
-    await this.updateBookingAndPaymentStatus(
-      data,
-      CleaningBookingPaymentStatusEnum.PaymentCompleted,
-    );
-  }
-
   private async updateBookingAndPaymentStatus(
     data: IPaymentWebhookEventData,
     paymentStatus: CleaningBookingPaymentStatusEnum,
@@ -345,6 +336,7 @@ export class PaymentReceiveService {
     );
 
     await this.cleaningBookingRepository.updateOneById(booking.id, {
+      bookingStatus: CleaningBookingStatusEnum.BookingCompleted,
       paymentStatus,
     });
   }
