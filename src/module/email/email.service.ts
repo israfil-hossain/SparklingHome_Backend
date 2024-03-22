@@ -138,4 +138,31 @@ export class EmailService {
       this.logger.error("Failed to send booking served email: " + error);
     }
   }
+
+  async sendBookingRenewedMail(
+    userEmail: string,
+    userName: string = "User",
+    cleaningDate: Date,
+    cleaningDuration: number,
+  ) {
+    try {
+      await this.mailerService.sendMail({
+        to: userEmail,
+        subject: "Upcoming Booking Notification",
+        template: "./booking-renew",
+        context: {
+          companyName: this.companyName,
+          companyWebsite: this.staticWebsiteUrl,
+          userName: userName,
+          cleaningDate: new Date(cleaningDate).toDateString(),
+          cleaningDuration: cleaningDuration,
+        },
+      });
+      this.logger.log(
+        "Booking renewed email sent successfully to: " + userEmail,
+      );
+    } catch (error) {
+      this.logger.error("Failed to send booking renewed email: " + error);
+    }
+  }
 }

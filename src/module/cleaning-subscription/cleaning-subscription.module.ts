@@ -10,6 +10,7 @@ import { PaymentReceiveModule } from "../payment-receive/payment-receive.module"
 import { CleaningSubscriptionController } from "./cleaning-subscription.controller";
 import { CleaningSubscriptionRepository } from "./cleaning-subscription.repository";
 import { CleaningSubscriptionService } from "./cleaning-subscription.service";
+import { CleaningSubscriptionTask } from "./cleaning-subscription.task";
 import {
   CleaningSubscription,
   CleaningSubscriptionSchema,
@@ -29,6 +30,10 @@ import {
     EncryptionModule,
   ],
   controllers: [CleaningSubscriptionController],
-  providers: [CleaningSubscriptionService, CleaningSubscriptionRepository],
+  providers: [
+    CleaningSubscriptionService,
+    CleaningSubscriptionTask,
+    CleaningSubscriptionRepository,
+  ],
 })
 export class CleaningSubscriptionModule {}
