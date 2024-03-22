@@ -27,6 +27,10 @@ export class CleaningBookingController {
     @AuthUserId() { userId }: ITokenPayload,
     @Body() updateDto: UpdateCleaningBookingDto,
   ) {
-    return this.cleaningBookingService.update(bookingId, updateDto, userId);
+    return this.cleaningBookingService.updateBooking(
+      bookingId,
+      updateDto,
+      userId,
+    );
   }
 }

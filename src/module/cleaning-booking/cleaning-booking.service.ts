@@ -23,7 +23,7 @@ export class CleaningBookingService {
     private readonly emailService: EmailService,
   ) {}
 
-  async update(
+  async updateBooking(
     bookingId: string,
     bookingUpdateDto: UpdateCleaningBookingDto,
     authUserId: string,

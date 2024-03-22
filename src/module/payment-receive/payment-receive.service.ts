@@ -16,8 +16,6 @@ import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { PaymentIntentResponseDto } from "./dto/payment-intent-response.dto";
 import { PaymentReceiveDocument } from "./entities/payment-receive.entity";
 import { PaymentWebhookEventEnum } from "./enum/payment-webhook-event.enum";
-import { ICallbackUrls } from "./interface/callback-urls.interface";
-import { IPaymentIntentCreateDto } from "./interface/payment-intent-create.interface";
 import {
   IPaymentWebhookEvent,
   IPaymentWebhookEventData,
@@ -27,6 +25,8 @@ import { PaymentReceiveRepository } from "./payment-receive.repository";
 @Injectable()
 export class PaymentReceiveService {
   private readonly logger: Logger = new Logger(PaymentReceiveService.name);
+  private readonly webhookEndpoint: string = "/api/PaymentReceive/WebhookEvent";
+
   private readonly paymentApiClient: AxiosInstance;
   private readonly webhookSecret: string;
   private readonly staticServerUrl: string;
@@ -60,9 +60,6 @@ export class PaymentReceiveService {
   async getPaymentIntent(
     bookingId: string,
     auditUserId: string,
-    hostUrl: string,
-    webhookEndpoint: string,
-    originUrl: string,
   ): Promise<SuccessResponseDto> {
     try {
       const booking = await this.getBookingWithPayment(bookingId);
@@ -70,26 +67,11 @@ export class PaymentReceiveService {
       let paymentReceive =
         booking.paymentReceive as unknown as PaymentReceiveDocument;
 
-      if (!paymentReceive) {
-        const callbackUrls = this.getCallbackUrls(
-          hostUrl,
-          originUrl,
-          webhookEndpoint,
-        );
-        const paymentIntentCreateDto = this.constructPaymentIntentDto(
-          booking,
-          callbackUrls,
-        );
-
-        const paymentIntentCreateResponse = await this.createPaymentIntent(
-          paymentIntentCreateDto,
-        );
-
-        paymentReceive = await this.createPaymentReceive(
-          booking,
-          auditUserId,
-          paymentIntentCreateResponse,
-        );
+      if (
+        !paymentReceive ||
+        booking.totalAmount !== paymentReceive.totalPayable
+      ) {
+        paymentReceive = await this.createPaymentReceive(booking, auditUserId);
       }
 
       const paymentIntentResponse = new PaymentIntentResponseDto();
@@ -181,99 +163,66 @@ export class PaymentReceiveService {
     return booking;
   }
 
-  private isInvalidForPG(url: string): boolean {
-    if (!url) return true;
-
-    try {
-      const parsedUrl = new URL(url);
-      const hostname = parsedUrl.hostname.toLowerCase();
-
-      return (
-        parsedUrl.protocol !== "https:" ||
-        hostname === "localhost" ||
-        hostname === "[::1]" ||
-        /^(127(?:\.\d{1,3}){3})$/.test(hostname)
-      );
-    } catch (_) {
-      return true;
-    }
-  }
-
-  private getCallbackUrls(
-    hostUrl: string,
-    originUrl: string,
-    webhookEndpoint: string,
-  ): ICallbackUrls {
-    return {
-      websiteCallbackUrl: this.isInvalidForPG(originUrl)
-        ? this.staticWebsiteUrl
-        : originUrl,
-      webhookEventUrl: `${this.isInvalidForPG(hostUrl) ? this.staticServerUrl : hostUrl}${webhookEndpoint}`,
-    };
-  }
-
-  private constructPaymentIntentDto(
-    booking: CleaningBookingDocument,
-    callbackUrls: ICallbackUrls,
-  ): IPaymentIntentCreateDto {
-    return {
-      order: {
-        items: [
-          {
-            reference: booking.id,
-            name: `Reservation for cleaning on ${new Date(booking.cleaningDate).toDateString()}`,
-            quantity: 1,
-            unit: "Reservation",
-            unitPrice: booking.totalAmount * 100,
-            netTotalAmount: booking.totalAmount * 100,
-            grossTotalAmount: booking.totalAmount * 100,
-          },
-        ],
-        amount: booking.totalAmount * 100,
-        currency: "SEK",
-        reference: booking.id,
-      },
-      checkout: {
-        integrationType: "HostedPaymentPage",
-        returnUrl: `${callbackUrls.websiteCallbackUrl}/profile`,
-        termsUrl: `${callbackUrls.websiteCallbackUrl}/terms-and-conditions`,
-        charge: true,
-        publicDevice: true,
-        merchantHandlesConsumerData: true,
-        appearance: {
-          displayOptions: { showMerchantName: true, showOrderSummary: true },
-          textOptions: { completePaymentButtonText: "pay" },
-        },
-      },
-      notifications: {
-        webHooks: Object.values(PaymentWebhookEventEnum).map((value) => ({
-          eventName: value,
-          url: callbackUrls.webhookEventUrl,
-          authorization: this.webhookSecret,
-        })),
-      },
-    };
-  }
-
   private async createPaymentIntent(
-    paymentIntentCreateDto: IPaymentIntentCreateDto,
+    booking: CleaningBookingDocument,
   ): Promise<{ paymentId: string; hostedPaymentPageUrl: string }> {
-    const { data } = await this.paymentApiClient.post<{
-      paymentId: string;
-      hostedPaymentPageUrl: string;
-    }>("/v1/payments", paymentIntentCreateDto);
+    try {
+      const { data } = await this.paymentApiClient.post<{
+        paymentId: string;
+        hostedPaymentPageUrl: string;
+      }>("/v1/payments", {
+        order: {
+          items: [
+            {
+              reference: booking.id,
+              name: `Reservation for cleaning on ${new Date(booking.cleaningDate).toDateString()}`,
+              quantity: 1,
+              unit: "Reservation",
+              unitPrice: booking.totalAmount * 100,
+              netTotalAmount: booking.totalAmount * 100,
+              grossTotalAmount: booking.totalAmount * 100,
+            },
+          ],
+          amount: booking.totalAmount * 100,
+          currency: "SEK",
+          reference: booking.id,
+        },
+        checkout: {
+          integrationType: "HostedPaymentPage",
+          returnUrl: `${this.staticWebsiteUrl}/profile`,
+          termsUrl: `${this.staticWebsiteUrl}/terms-and-conditions`,
+          charge: true,
+          publicDevice: true,
+          merchantHandlesConsumerData: true,
+          appearance: {
+            displayOptions: { showMerchantName: true, showOrderSummary: true },
+            textOptions: { completePaymentButtonText: "pay" },
+          },
+        },
+        notifications: {
+          webHooks: Object.values(PaymentWebhookEventEnum).map((value) => ({
+            eventName: value,
+            url: `${this.staticServerUrl}${this.webhookEndpoint}`,
+            authorization: this.webhookSecret,
+          })),
+        },
+      });
 
-    return data;
+      return data;
+    } catch (error) {
+      this.logger.error(
+        "Error in create payment request:",
+        error?.response?.data,
+      );
+      throw error;
+    }
   }
 
   private async createPaymentReceive(
     booking: CleaningBookingDocument,
     auditUserId: string,
-    paymentIntentCreateResponse: {
-      paymentId: string;
-      hostedPaymentPageUrl: string;
-    },
   ): Promise<PaymentReceiveDocument> {
+    const paymentIntentCreateResponse = await this.createPaymentIntent(booking);
     const paymentReceive = await this.paymentReceiveRepository.create({
       totalPayable: booking.totalAmount,
       totalDue: booking.totalAmount,

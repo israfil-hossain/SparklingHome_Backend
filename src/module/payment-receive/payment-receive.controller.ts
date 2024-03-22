@@ -8,10 +8,6 @@ import {
   Post,
 } from "@nestjs/common";
 import { ApiExcludeEndpoint, ApiResponse, ApiTags } from "@nestjs/swagger";
-import {
-  HostHeader,
-  OriginHeader,
-} from "../../utility/decorator/request-header.decorator";
 import { AuthUserId } from "../authentication/decorator/auth-user-id.decorator";
 import { IsPublic } from "../authentication/guard/authentication.guard";
 import { DocIdQueryDto } from "../common/dto/doc-id-query.dto";
@@ -30,19 +26,10 @@ export class PaymentReceiveController {
     type: SuccessResponseDto,
   })
   getPaymentIntent(
-    @HostHeader() hostUrl: string,
-    @OriginHeader() originUrl: string,
     @AuthUserId() { userId }: ITokenPayload,
     @Param() { DocId }: DocIdQueryDto,
   ) {
-    const webhookUrl = `/api/PaymentReceive/WebhookEvent`;
-    return this.paymentService.getPaymentIntent(
-      DocId,
-      userId,
-      hostUrl,
-      webhookUrl,
-      originUrl,
-    );
+    return this.paymentService.getPaymentIntent(DocId, userId);
   }
 
   @Post("WebhookEvent")
