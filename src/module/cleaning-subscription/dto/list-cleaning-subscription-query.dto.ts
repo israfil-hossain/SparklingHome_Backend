@@ -7,7 +7,6 @@ export class ListCleaningSubscriptionQueryDto extends PaginationQuery {
   @ApiProperty({
     required: false,
     enum: CleaningSubscriptionFrequencyEnum,
-    default: CleaningSubscriptionFrequencyEnum.WEEKLY,
     description: "The frequency of the cleaning subscription.",
   })
   @IsEnum(CleaningSubscriptionFrequencyEnum, {

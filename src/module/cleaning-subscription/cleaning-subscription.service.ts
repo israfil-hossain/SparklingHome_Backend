@@ -10,6 +10,7 @@ import { ApplicationUserRepository } from "../application-user/application-user.
 import { ApplicationUserDocument } from "../application-user/entities/application-user.entity";
 import { ApplicationUserRoleEnum } from "../application-user/enum/application-user-role.enum";
 import { CleaningBookingRepository } from "../cleaning-booking/cleaning-booking.repository";
+import { CleaningBookingStatusEnum } from "../cleaning-booking/enum/cleaning-booking-status.enum";
 import { CleaningCouponRepository } from "../cleaning-coupon/cleaning-coupon.repository";
 import { CleaningCouponDocument } from "../cleaning-coupon/entities/cleaning-coupon.entity";
 import { CleaningPriceRepository } from "../cleaning-price/cleaning-price.repository";
@@ -40,6 +41,50 @@ export class CleaningSubscriptionService {
     private readonly encryptionService: EncryptionService,
     private readonly emailService: EmailService,
   ) {}
+
+  async getUserSubscription(userId: string): Promise<SuccessResponseDto> {
+    try {
+      const subscription =
+        await this.cleaningSubscriptionRepository.getOneWhere(
+          {
+            subscribedUser: userId,
+            isActive: true,
+          },
+          {
+            populate: [
+              {
+                path: "subscribedUser",
+                select: "-role -isActive -password -isPasswordLess",
+                populate: "profilePicture",
+              },
+              {
+                path: "cleaningCoupon",
+                select: "couponCode",
+              },
+              {
+                path: "currentBooking",
+                select:
+                  "-isActive -createdAt -createdBy -updatedAt -updatedBy -paymentReceive",
+              },
+            ],
+          },
+        );
+
+      if (!subscription) {
+        throw new BadRequestException("No active subscription found");
+      }
+
+      return new SuccessResponseDto(
+        "Subscription fetched successfully",
+        subscription,
+      );
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+
+      this.logger.error("Error finding document:", error);
+      throw new BadRequestException("Could not get document");
+    }
+  }
 
   async addSubscription(
     createDto: CreateCleaningSubscriptionDto,
@@ -185,50 +230,6 @@ export class CleaningSubscriptionService {
     }
   }
 
-  async getUserSubscription(userId: string): Promise<SuccessResponseDto> {
-    try {
-      const subscription =
-        await this.cleaningSubscriptionRepository.getOneWhere(
-          {
-            subscribedUser: userId,
-            isActive: true,
-          },
-          {
-            populate: [
-              {
-                path: "subscribedUser",
-                select: "-role -isActive -password -isPasswordLess",
-                populate: "profilePicture",
-              },
-              {
-                path: "cleaningCoupon",
-                select: "couponCode",
-              },
-              {
-                path: "currentBooking",
-                select:
-                  "-isActive -createdAt -createdBy -updatedAt -updatedBy -paymentReceive",
-              },
-            ],
-          },
-        );
-
-      if (!subscription) {
-        throw new BadRequestException("No active subscription found");
-      }
-
-      return new SuccessResponseDto(
-        "Subscription fetched successfully",
-        subscription,
-      );
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-
-      this.logger.error("Error finding document:", error);
-      throw new BadRequestException("Could not get document");
-    }
-  }
-
   async cancelSubscription(
     { userId, userRole }: ITokenPayload,
     subscriptionId: string,
@@ -255,14 +256,17 @@ export class CleaningSubscriptionService {
       await this.cleaningSubscriptionRepository.updateOneById(subscription.id, {
         isActive: false,
         updatedBy: userId,
+        updatedAt: new Date(),
       });
 
       if (subscription.currentBooking) {
         await this.cleaningBookingRepository.updateOneById(
           subscription.currentBooking,
           {
+            bookingStatus: CleaningBookingStatusEnum.BookingCancelled,
             isActive: false,
             updatedBy: userId,
+            updatedAt: new Date(),
           },
         );
       }

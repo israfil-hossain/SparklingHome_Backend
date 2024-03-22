@@ -27,6 +27,11 @@ export class CleaningSubscriptionController {
     private readonly cleaningSubscriptionService: CleaningSubscriptionService,
   ) {}
 
+  @Get("GetUserSubscription")
+  getUserSubscription(@AuthUserId() { userId }: ITokenPayload) {
+    return this.cleaningSubscriptionService.getUserSubscription(userId);
+  }
+
   @Post("AddSubscription")
   @ApiBody({ type: CreateCleaningSubscriptionDto })
   @ApiResponse({
@@ -36,11 +41,6 @@ export class CleaningSubscriptionController {
   @IsPublic()
   addSubscription(@Body() createDto: CreateCleaningSubscriptionDto) {
     return this.cleaningSubscriptionService.addSubscription(createDto);
-  }
-
-  @Get("GetUserSubscription")
-  getUserSubscription(@AuthUserId() { userId }: ITokenPayload) {
-    return this.cleaningSubscriptionService.getUserSubscription(userId);
   }
 
   @Patch("CancelSubscription")
