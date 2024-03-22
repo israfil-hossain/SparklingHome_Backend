@@ -131,6 +131,14 @@ export class CleaningSubscriptionService {
           password: userPasswordHash,
         });
 
+        this.logger.log(
+          `New user created from subscription with these credentials: `,
+          {
+            newUserName: subscriptionUser.fullName,
+            newUserEmail: subscriptionUser.email,
+            newUserPassword: userPassword,
+          },
+        );
         this.emailService.sendUserCredentialsMail(
           subscriptionUser.email,
           subscriptionUser.fullName ?? "User",
