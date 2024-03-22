@@ -20,6 +20,7 @@ import {
   IPaymentWebhookEvent,
   IPaymentWebhookEventData,
 } from "./interface/payment-webhook-event.interface";
+import { PaymentEventRepository } from "./payment-event.repository";
 import { PaymentReceiveRepository } from "./payment-receive.repository";
 
 @Injectable()
@@ -35,6 +36,7 @@ export class PaymentReceiveService {
   constructor(
     private readonly configService: ConfigService,
     private readonly paymentReceiveRepository: PaymentReceiveRepository,
+    private readonly paymentEventRepository: PaymentEventRepository,
     private readonly cleaningBookingRepository: CleaningBookingRepository,
   ) {
     this.staticServerUrl = this.configService.get(
@@ -101,6 +103,7 @@ export class PaymentReceiveService {
         throw new BadRequestException("Unauthorized access");
 
       if (!event) throw new BadRequestException("Invalid webhook payload");
+      this.storePaymentEventLog(JSON.stringify(event));
 
       const { event: eventType, data } = event;
       switch (eventType) {
@@ -288,6 +291,16 @@ export class PaymentReceiveService {
       bookingStatus: CleaningBookingStatusEnum.BookingCompleted,
       paymentStatus,
     });
+  }
+
+  private async storePaymentEventLog(event: string): Promise<void> {
+    try {
+      await this.paymentEventRepository.create({
+        eventData: event,
+      });
+    } catch (err) {
+      this.logger.error("Failed to store payment event log: " + err);
+    }
   }
   //#endregion
 }
