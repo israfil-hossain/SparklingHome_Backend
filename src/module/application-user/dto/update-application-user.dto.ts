@@ -1,44 +1,15 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import {
-  IsDate,
-  IsEmail,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-} from "class-validator";
+import { ApiProperty, OmitType, PartialType } from "@nestjs/swagger";
+import { IsBoolean, IsOptional } from "class-validator";
+import { CreateApplicationUserDto } from "./create-application-user.dto";
 
-export class UpdateApplicationUserDto {
-  @ApiProperty({ description: "User's email", example: "user@example.com" })
-  @IsNotEmpty({ message: "Email is required" })
-  @IsEmail({}, { message: "Invalid email format" })
-  email: string;
-
-  @ApiProperty({ description: "User's full name", required: false })
-  @IsOptional()
-  @IsString({ message: "Full name must be a string" })
-  fullName?: string;
-
-  @ApiProperty({ description: "User's phone number", required: false })
-  @IsOptional()
-  @IsString({ message: "Phone number must be a string" })
-  phoneNumber?: string;
-
-  @ApiProperty({ description: "User's address", required: false })
-  @IsOptional()
-  @IsString({ message: "Address must be a string" })
-  address?: string;
-
-  @ApiProperty({ description: "User's country code", required: false })
-  @IsOptional()
-  @IsString({ message: "Country code must be a string" })
-  countryCode?: string;
-
-  @ApiProperty({ description: "User's date of birth", required: false })
-  @IsOptional()
-  @Transform(({ value }) => value && new Date(value))
-  @IsDate({
-    message: "Invalid date of birth format, please provide a valid date",
+export class UpdateApplicationUserDto extends PartialType(
+  OmitType(CreateApplicationUserDto, ["password"]),
+) {
+  @ApiProperty({
+    required: false,
+    description: "Specify if enitiy is active or not",
   })
-  dateOfBirth?: Date;
+  @IsOptional()
+  @IsBoolean({ message: "Must be a boolean" })
+  isActive?: boolean;
 }
