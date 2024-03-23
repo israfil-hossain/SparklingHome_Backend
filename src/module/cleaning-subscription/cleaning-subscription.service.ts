@@ -135,7 +135,7 @@ export class CleaningSubscriptionService {
           password: userPasswordHash,
         });
 
-        this.logger.log(
+        this.logger.warn(
           `New user created from subscription with these credentials: `,
           {
             newUserName: subscriptionUser.fullName,

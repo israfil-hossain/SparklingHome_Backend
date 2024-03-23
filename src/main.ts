@@ -5,11 +5,14 @@ import { NestExpressApplication } from "@nestjs/platform-express";
 import { AppModule } from "./app.module";
 import { configureSentryService } from "./config/sentry.config";
 import { configureSwaggerUI } from "./config/swagger.config";
+import { SentryLogger } from "./utility/logger/sentry.logger";
 
 const logger = new Logger("Glansandehem");
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: new SentryLogger(),
+  });
 
   app.setGlobalPrefix("api");
 

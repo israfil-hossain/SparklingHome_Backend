@@ -82,7 +82,8 @@ class AuthenticationGuard implements CanActivate {
     const [type, token] = request?.headers?.authorization?.split(" ") ?? [];
     if (type !== "Bearer" || !token) {
       this.logger.error(
-        `Invalid authorization header: ${request?.headers?.authorization}`,
+        `Invalid authorization header: `,
+        request?.headers?.authorization,
       );
       throw new UnauthorizedException(
         "User is not authorized to perform this action",
