@@ -44,7 +44,9 @@ export class CleaningPriceService {
 
   async findAll(): Promise<SuccessResponseDto> {
     try {
-      const results = await this.cleaningPriceRepository.getAll();
+      const results = await this.cleaningPriceRepository.getAll({
+        isActive: true,
+      });
 
       return new SuccessResponseDto("All document fetched", results);
     } catch (error) {

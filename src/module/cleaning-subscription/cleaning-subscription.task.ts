@@ -77,9 +77,10 @@ export class CleaningSubscriptionTask {
       }
       const subscription = booking.subscription;
 
-      const cleaningCoupon = await this.cleaningCouponRepository.getOneById(
-        subscription.cleaningCoupon,
-      );
+      const cleaningCoupon = await this.cleaningCouponRepository.getOneWhere({
+        _id: subscription.cleaningCoupon,
+        isActive: true,
+      });
 
       const nextScheduleDate = this.getNextScheduleDate(
         booking.cleaningDate,

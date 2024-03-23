@@ -7,7 +7,6 @@ import {
 } from "@nestjs/common";
 import { FilterQuery } from "mongoose";
 import { ApplicationUserRepository } from "../application-user/application-user.repository";
-import { ApplicationUserDocument } from "../application-user/entities/application-user.entity";
 import { ApplicationUserRoleEnum } from "../application-user/enum/application-user-role.enum";
 import { CleaningBookingRepository } from "../cleaning-booking/cleaning-booking.repository";
 import { CleaningBookingDocument } from "../cleaning-booking/entities/cleaning-booking.entity";
@@ -56,7 +55,13 @@ export class CleaningSubscriptionService {
               {
                 path: "subscribedUser",
                 select: "-role -isActive -password -isPasswordLess",
-                populate: "profilePicture",
+                populate: [
+                  {
+                    path: "profilePicture",
+                    select: "url",
+                    transform: (doc) => doc?.url ?? null,
+                  },
+                ],
               },
               {
                 path: "cleaningCoupon",
@@ -91,31 +96,30 @@ export class CleaningSubscriptionService {
     createDto: CreateCleaningSubscriptionDto,
   ): Promise<SuccessResponseDto> {
     try {
-      let subscriptionUser: ApplicationUserDocument;
-
-      const existingUser = await this.applicationUserRepository.getOneWhere({
+      let subscriptionUser = await this.applicationUserRepository.getOneWhere({
         email: createDto.userEmail,
         role: ApplicationUserRoleEnum.USER,
       });
 
-      if (existingUser) {
-        if (!existingUser.isActive) {
-          await this.applicationUserRepository.updateOneById(existingUser.id, {
-            isActive: true,
-          });
+      if (subscriptionUser) {
+        if (!subscriptionUser.isActive) {
+          await this.applicationUserRepository.updateOneById(
+            subscriptionUser.id,
+            {
+              isActive: true,
+            },
+          );
         }
 
         const existingSubscription =
           await this.cleaningSubscriptionRepository.getOneWhere({
-            subscribedUser: existingUser?.id,
+            subscribedUser: subscriptionUser?.id,
             isActive: true,
           });
 
         if (existingSubscription) {
           throw new BadRequestException("You already have a subscription");
         }
-
-        subscriptionUser = existingUser;
       } else {
         const userPassword = this.encryptionService.generateTemporaryPassword();
         const userPasswordHash =
@@ -148,9 +152,10 @@ export class CleaningSubscriptionService {
 
       let cleaningCoupon: CleaningCouponDocument | null = null;
       if (createDto?.cleaningCoupon) {
-        cleaningCoupon = await this.cleaningCouponRepository.getOneById(
-          createDto?.cleaningCoupon,
-        );
+        cleaningCoupon = await this.cleaningCouponRepository.getOneWhere({
+          _id: createDto?.cleaningCoupon,
+          isActive: true,
+        });
 
         if (!cleaningCoupon || !cleaningCoupon.id) {
           throw new BadRequestException("Cleaning coupon not valid");
@@ -204,6 +209,7 @@ export class CleaningSubscriptionService {
     try {
       const subscriptionQuery: FilterQuery<CleaningSubscriptionDocument> = {
         _id: subscriptionId,
+        isActive: true,
       };
 
       if (userRole !== ApplicationUserRoleEnum.ADMIN) {
@@ -273,7 +279,13 @@ export class CleaningSubscriptionService {
             {
               path: "subscribedUser",
               select: "-role -isActive -password -isPasswordLess",
-              populate: "profilePicture",
+              populate: [
+                {
+                  path: "profilePicture",
+                  select: "url",
+                  transform: (doc) => doc?.url ?? null,
+                },
+              ],
             },
             {
               path: "currentBooking",
