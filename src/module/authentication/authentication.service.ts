@@ -68,10 +68,7 @@ export class AuthenticationService {
 
       const newUser = await this.applicationUserRepository.create(signupDto);
 
-      const accessToken = await this.generateAccessToken(
-        newUser?.id?.toString(),
-        newUser?.role,
-      );
+      const accessToken = await this.generateAccessToken(newUser);
 
       const refreshToken = await this.createRefreshToken(
         newUser?.id?.toString(),
@@ -130,10 +127,7 @@ export class AuthenticationService {
         );
       }
 
-      const accessToken = await this.generateAccessToken(
-        user?.id?.toString(),
-        user?.role,
-      );
+      const accessToken = await this.generateAccessToken(user);
       const refreshToken = await this.createRefreshToken(user?.id?.toString());
 
       user.lastLogin = new Date();
@@ -167,15 +161,9 @@ export class AuthenticationService {
         {
           token: refreshToken,
           expiresAt: { $gt: new Date() },
-          isActive: true,
         },
         {
-          populate: [
-            {
-              path: "user",
-              select: "role",
-            },
-          ],
+          populate: "user",
         },
       );
 
@@ -187,10 +175,7 @@ export class AuthenticationService {
       const userData =
         refreshTokenDoc?.user as unknown as ApplicationUserDocument;
 
-      const accessToken = await this.generateAccessToken(
-        userData._id.toString(),
-        userData.role,
-      );
+      const accessToken = await this.generateAccessToken(userData);
 
       const tokenDto = new TokenResponseDto(
         accessToken,
@@ -363,11 +348,13 @@ export class AuthenticationService {
   }
 
   // Private Helper Methods
-  private async generateAccessToken(userId: string, userRole: string) {
+  private async generateAccessToken(user: ApplicationUserDocument) {
     try {
       const tokenPayload: ITokenPayload = {
-        userId,
-        userRole,
+        userId: user._id.toString(),
+        userEmail: user.email,
+        userName: user.fullName || "",
+        userRole: user.role,
       };
 
       return await this.jwtService.signAsync(tokenPayload);

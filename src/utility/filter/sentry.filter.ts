@@ -17,8 +17,13 @@ class SentryExceptionFilter extends BaseExceptionFilter {
           params: request.params,
         });
 
-        if (request?.user?.userId) {
-          scope.setUser({ id: request.user.userId });
+        if (request?.user) {
+          scope.setUser({
+            id: request.user?.userId,
+            email: request.user?.userEmail,
+            username: request.user?.userName,
+            role: request.user?.userRole,
+          });
         }
       }
 
