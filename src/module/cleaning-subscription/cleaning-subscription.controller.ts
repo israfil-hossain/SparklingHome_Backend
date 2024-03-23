@@ -16,9 +16,9 @@ import { DocIdQueryDto } from "../common/dto/doc-id-query.dto";
 import { PaginatedResponseDto } from "../common/dto/paginated-response.dto";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { CleaningSubscriptionService } from "./cleaning-subscription.service";
-import { CancelCleaningSubscriptionDto } from "./dto/cancel-cleaning-subscription.dto";
 import { CreateCleaningSubscriptionDto } from "./dto/create-cleaning-subscription.dto";
 import { ListCleaningSubscriptionQueryDto } from "./dto/list-cleaning-subscription-query.dto";
+import { UpdateCleaningSubscriptionDto } from "./dto/update-cleaning-subscription.dto";
 
 @ApiTags("Cleaning Subscription")
 @Controller("CleaningSubscription")
@@ -43,19 +43,34 @@ export class CleaningSubscriptionController {
     return this.cleaningSubscriptionService.addSubscription(createDto);
   }
 
-  @Patch("CancelSubscription")
+  @Patch("UpdateSubscriptionById/:DocId")
+  @ApiBody({ type: UpdateCleaningSubscriptionDto })
+  @ApiResponse({
+    status: 200,
+    type: SuccessResponseDto,
+  })
+  updateSubscription(
+    @AuthUserId() authUser: ITokenPayload,
+    @Param() { DocId }: DocIdQueryDto,
+    @Body() updateDto: UpdateCleaningSubscriptionDto,
+  ) {
+    return this.cleaningSubscriptionService.updateSubscription(
+      DocId,
+      updateDto,
+      authUser,
+    );
+  }
+
+  @Patch("CancelSubscriptionById/:DocId")
   @ApiResponse({
     status: 200,
     type: SuccessResponseDto,
   })
   cancelSubscription(
     @AuthUserId() authUser: ITokenPayload,
-    @Body() { subscriptionId }: CancelCleaningSubscriptionDto,
+    @Param() { DocId }: DocIdQueryDto,
   ) {
-    return this.cleaningSubscriptionService.cancelSubscription(
-      authUser,
-      subscriptionId,
-    );
+    return this.cleaningSubscriptionService.cancelSubscription(authUser, DocId);
   }
 
   @Get("GetAll")

@@ -23,6 +23,7 @@ import { EncryptionService } from "../encryption/encryption.service";
 import { CleaningSubscriptionRepository } from "./cleaning-subscription.repository";
 import { CreateCleaningSubscriptionDto } from "./dto/create-cleaning-subscription.dto";
 import { ListCleaningSubscriptionQueryDto } from "./dto/list-cleaning-subscription-query.dto";
+import { UpdateCleaningSubscriptionDto } from "./dto/update-cleaning-subscription.dto";
 import { CleaningSubscriptionDocument } from "./entities/cleaning-subscription.entity";
 import { CleaningSubscriptionFrequencyEnum } from "./enum/cleaning-subscription-frequency.enum";
 
@@ -202,6 +203,92 @@ export class CleaningSubscriptionService {
     }
   }
 
+  async updateSubscription(
+    subscriptionId: string,
+    updateDto: UpdateCleaningSubscriptionDto,
+    { userId, userRole }: ITokenPayload,
+  ): Promise<SuccessResponseDto> {
+    try {
+      const subscriptionQuery: FilterQuery<CleaningSubscriptionDocument> = {
+        _id: subscriptionId,
+        isActive: true,
+      };
+
+      if (userRole !== ApplicationUserRoleEnum.ADMIN) {
+        subscriptionQuery.subscribedUser = userId;
+      }
+
+      const subscription =
+        await this.cleaningSubscriptionRepository.getOneWhere(
+          subscriptionQuery,
+          {
+            populate: ["currentBooking", "cleaningCoupon"],
+          },
+        );
+
+      if (!subscription)
+        throw new BadRequestException(
+          "No active subscription found with id: " + subscriptionId,
+        );
+
+      const updateSubscription =
+        await this.cleaningSubscriptionRepository.updateOneById(
+          subscription.id,
+          {
+            ...updateDto,
+            updatedBy: userId,
+            updatedAt: new Date(),
+          },
+        );
+
+      if (updateDto.areaInSquareMeters || updateDto.cleaningDurationInHours) {
+        const currentBooking =
+          subscription.currentBooking as unknown as CleaningBookingDocument;
+
+        if (!currentBooking)
+          throw new BadRequestException(
+            "No active booking found with id: " + subscriptionId,
+          );
+
+        if (
+          currentBooking.bookingStatus ===
+            CleaningBookingStatusEnum.BookingInitiated &&
+          currentBooking.cleaningDuration !==
+            updateSubscription.cleaningDurationInHours
+        ) {
+          const cleaningCoupon =
+            subscription.cleaningCoupon as unknown as CleaningCouponDocument;
+
+          const newBooking = await this.createBookingFromSubscription(
+            updateSubscription,
+            updateSubscription.startDate,
+            cleaningCoupon,
+          );
+
+          await this.cleaningSubscriptionRepository.updateOneById(
+            subscription.id,
+            {
+              currentBooking: newBooking._id?.toString(),
+              updatedBy: userId,
+              updatedAt: new Date(),
+            },
+          );
+        }
+      }
+
+      const result = new IdNameResponseDto(subscription.id);
+      return new SuccessResponseDto(
+        "Subscription updated successfully",
+        result,
+      );
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+
+      this.logger.error("Error updating subscription:", error);
+      throw new BadRequestException("Could not updated subscription");
+    }
+  }
+
   async cancelSubscription(
     { userId, userRole }: ITokenPayload,
     subscriptionId: string,
@@ -275,6 +362,9 @@ export class CleaningSubscriptionService {
         {
           limit: PageSize,
           skip,
+          sort: {
+            createdAt: -1,
+          },
           populate: [
             {
               path: "subscribedUser",

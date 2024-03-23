@@ -151,6 +151,10 @@ export class CleaningBookingRepository extends GenericRepository<CleaningBooking
   async findTopUsersByBooking() {
     const modelAggregation = this.model
       .aggregate()
+      .match({
+        bookingStatus: CleaningBookingStatusEnum.BookingCompleted,
+        paymentStatus: CleaningBookingPaymentStatusEnum.PaymentCompleted,
+      })
       .lookup({
         from: ApplicationUser.name.toLocaleLowerCase().concat("s"),
         let: { bookingUserId: "$bookingUser" },
