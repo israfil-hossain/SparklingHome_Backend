@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   Logger,
+  Provider,
 } from "@nestjs/common";
 import { APP_GUARD, Reflector } from "@nestjs/core";
 import { Observable } from "rxjs";
@@ -47,7 +48,7 @@ export class ApplicationUserRolesGuard implements CanActivate {
   }
 }
 
-export const RolesGuardProvider = {
+export const RolesGuardProvider: Provider = {
   provide: APP_GUARD,
   useClass: ApplicationUserRolesGuard,
 };

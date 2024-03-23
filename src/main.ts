@@ -3,6 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { AppModule } from "./app.module";
+import { configureSentryService } from "./config/sentry.config";
 import { configureSwaggerUI } from "./config/swagger.config";
 
 const logger = new Logger("Glansandehem");
@@ -17,9 +18,10 @@ async function bootstrap() {
   });
 
   const cfg = app.get(ConfigService);
-  const port = parseInt(cfg.get("PORT", "4000"), 10);
   configureSwaggerUI(app);
+  configureSentryService(app, cfg);
 
+  const port = parseInt(cfg.get("PORT", "4000"), 10);
   await app.listen(port);
 
   return `${await app.getUrl()}`;

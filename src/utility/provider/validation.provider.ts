@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   HttpStatus,
+  Provider,
   ValidationPipe,
 } from "@nestjs/common";
 import { APP_PIPE } from "@nestjs/core";
@@ -30,7 +31,7 @@ const exceptionFactory = (errors: ValidationError[]) => {
   return formattedErrors;
 };
 
-export const ValidationProvider = {
+export const ValidationProvider: Provider = {
   provide: APP_PIPE,
   useFactory: () =>
     new ValidationPipe({

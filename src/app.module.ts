@@ -11,6 +11,7 @@ import { ConfigurationModule } from "./module/configuration/configuration.module
 import { EmailModule } from "./module/email/email.module";
 import { EncryptionModule } from "./module/encryption/encryption.module";
 import { ImageMetaModule } from "./module/image-meta/image-meta.module";
+import { SentryExceptionFilterProvider } from "./utility/filter/sentry.filter";
 import { ValidationProvider } from "./utility/provider/validation.provider";
 
 @Module({
@@ -28,6 +29,6 @@ import { ValidationProvider } from "./utility/provider/validation.provider";
     CleaningPriceModule,
     CleaningCouponModule,
   ],
-  providers: [ValidationProvider],
+  providers: [ValidationProvider, SentryExceptionFilterProvider],
 })
 export class AppModule {}

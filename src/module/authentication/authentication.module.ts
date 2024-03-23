@@ -11,7 +11,7 @@ import {
   RefreshToken,
   RefreshTokenSchema,
 } from "./entities/refresh-token.entity";
-import { AuthenticationGuardProvider } from "./provider/authentication-guard.provider";
+import { AuthenticationGuardProvider } from "./guard/authentication.guard";
 import { RefreshTokenRepository } from "./refresh-token.repository";
 
 @Module({
