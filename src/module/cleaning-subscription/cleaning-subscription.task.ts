@@ -7,7 +7,6 @@ import { EmailService } from "../email/email.service";
 import { CleaningSubscriptionRepository } from "./cleaning-subscription.repository";
 import { CleaningSubscriptionService } from "./cleaning-subscription.service";
 import { CleaningSubscriptionDocument } from "./entities/cleaning-subscription.entity";
-import { CleaningSubscriptionFrequencyEnum } from "./enum/cleaning-subscription-frequency.enum";
 
 interface ICleaningBookingWithSubscription extends CleaningBookingDocument {
   subscription: CleaningSubscriptionDocument;
@@ -45,28 +44,6 @@ export class CleaningSubscriptionTask {
   }
 
   //#region Private helper methos
-  private getNextScheduleDate(
-    previousDate: Date,
-    frequency: CleaningSubscriptionFrequencyEnum,
-  ): Date {
-    const currentDate = new Date(previousDate);
-
-    switch (frequency) {
-      case CleaningSubscriptionFrequencyEnum.WEEKLY:
-        currentDate.setDate(currentDate.getDate() + 7);
-        break;
-      case CleaningSubscriptionFrequencyEnum.BIWEEKLY:
-        currentDate.setDate(currentDate.getDate() + 14);
-        break;
-      case CleaningSubscriptionFrequencyEnum.MONTHLY:
-        currentDate.setMonth(currentDate.getMonth() + 1);
-        break;
-      default:
-        throw new Error("Invalid frequency provided");
-    }
-
-    return currentDate;
-  }
 
   private async renewBookingFromPrev(
     booking: ICleaningBookingWithSubscription,
@@ -82,16 +59,14 @@ export class CleaningSubscriptionTask {
         isActive: true,
       });
 
-      const nextScheduleDate = this.getNextScheduleDate(
-        booking.cleaningDate,
-        subscription.subscriptionFrequency,
-      );
+      if (!subscription.nextScheduleDate)
+        throw new Error("Next schedule date is not valid");
 
       const newBooking =
         await this.cleaningSubscriptionService.createBookingFromSubscription(
           subscription,
+          subscription.nextScheduleDate,
           cleaningCoupon,
-          nextScheduleDate,
         );
 
       await this.cleaningSubscriptionRepository.updateOneById(
@@ -113,7 +88,14 @@ export class CleaningSubscriptionTask {
         newBooking.cleaningDate,
         newBooking.cleaningDuration,
       );
-    } catch (_) {}
+
+      this.logger.log(
+        "Booking renewed from subscription with Id: " +
+          newBooking._id.toString(),
+      );
+    } catch (err) {
+      this.logger.error("Error renewing booking from schedular: ", err);
+    }
   }
 
   private async updateSubscriptionBookings() {

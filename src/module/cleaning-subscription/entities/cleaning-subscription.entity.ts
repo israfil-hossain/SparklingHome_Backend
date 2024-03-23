@@ -44,6 +44,13 @@ export class CleaningSubscription extends BaseEntity {
   @Prop({ required: true, type: Date, min: new Date() })
   startDate: Date;
 
+  @Prop({
+    type: Date,
+    min: new Date(),
+    default: null,
+  })
+  nextScheduleDate: Date | null;
+
   @Prop({ default: false })
   hasCats: boolean;
 

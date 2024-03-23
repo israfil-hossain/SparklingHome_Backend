@@ -24,6 +24,7 @@ import { CleaningSubscriptionRepository } from "./cleaning-subscription.reposito
 import { CreateCleaningSubscriptionDto } from "./dto/create-cleaning-subscription.dto";
 import { ListCleaningSubscriptionQueryDto } from "./dto/list-cleaning-subscription-query.dto";
 import { CleaningSubscriptionDocument } from "./entities/cleaning-subscription.entity";
+import { CleaningSubscriptionFrequencyEnum } from "./enum/cleaning-subscription-frequency.enum";
 
 @Injectable()
 export class CleaningSubscriptionService {
@@ -154,17 +155,24 @@ export class CleaningSubscriptionService {
         }
       }
 
+      const nextScheduleDate = this.getNextScheduleDate(
+        createDto.startDate,
+        createDto.subscriptionFrequency,
+      );
+
       const newSubscription = await this.cleaningSubscriptionRepository.create({
         ...createDto,
         cleaningCoupon: cleaningCoupon?.id,
         subscriptionFrequency: createDto.subscriptionFrequency,
         createdBy: subscriptionUser.id,
         subscribedUser: subscriptionUser.id,
+        nextScheduleDate: nextScheduleDate,
       });
 
       try {
         const newBooking = await this.createBookingFromSubscription(
           newSubscription,
+          newSubscription.startDate,
           cleaningCoupon,
         );
 
@@ -333,10 +341,33 @@ export class CleaningSubscriptionService {
   }
 
   //#region Shared internal methods
+  private getNextScheduleDate(
+    previousDate: Date,
+    frequency: CleaningSubscriptionFrequencyEnum,
+  ): Date | null {
+    const currentDate = new Date(previousDate);
+
+    switch (frequency) {
+      case CleaningSubscriptionFrequencyEnum.WEEKLY:
+        currentDate.setDate(currentDate.getDate() + 7);
+        break;
+      case CleaningSubscriptionFrequencyEnum.BIWEEKLY:
+        currentDate.setDate(currentDate.getDate() + 14);
+        break;
+      case CleaningSubscriptionFrequencyEnum.MONTHLY:
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        break;
+      default:
+        return null;
+    }
+
+    return currentDate;
+  }
+
   async createBookingFromSubscription(
     subscription: CleaningSubscriptionDocument,
+    cleaningScheduleDate: Date,
     coupon?: CleaningCouponDocument | null,
-    cleaningDate?: Date | null,
   ): Promise<CleaningBookingDocument> {
     const cleaningPrice = await this.cleaningPriceRepository.getOneWhere({
       subscriptionFrequency: subscription.subscriptionFrequency,
@@ -373,7 +404,7 @@ export class CleaningSubscriptionService {
 
     const newBooking = await this.cleaningBookingRepository.create({
       bookingUser: subscription.subscribedUser,
-      cleaningDate: cleaningDate ?? subscription.startDate,
+      cleaningDate: cleaningScheduleDate,
       cleaningDuration: cleaningDurationInHours,
       cleaningPrice: totalCleaningPrice,
       discountAmount: couponDiscountAmount,
