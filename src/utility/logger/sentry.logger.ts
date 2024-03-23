@@ -2,13 +2,14 @@ import { ConsoleLogger } from "@nestjs/common";
 import * as Sentry from "@sentry/node";
 
 export class SentryLogger extends ConsoleLogger {
-  error(message: any, stackOrContext?: string, context?: string): void;
-  error(message: any, stack?: string, context?: string): void;
-  error(message: any, ...optionalParams: [...any, string?, string?]): void {
+  error(message: any, stackOrContext?: string | object, context?: string): void;
+  error(message: any, stack?: string | object, context?: string): void;
+  error(message: any, ...optionalParams: [...any]): void {
     const { errorMessage, stack, context } = this.prepareLogParams(
       message,
       ...optionalParams,
     );
+
     this.captureAndLog("error", errorMessage, stack, context);
   }
 
@@ -18,45 +19,48 @@ export class SentryLogger extends ConsoleLogger {
       message,
       ...optionalParams,
     );
-    this.captureAndLog("warning", errorMessage, undefined, context);
+    this.captureAndLog("warn", errorMessage, undefined, context);
   }
 
   private prepareLogParams(
     message: any,
     ...optionalParams: any[]
-  ): { errorMessage: string; stack?: string; context?: string } {
-    let errorMessage = message.toString();
-    let stack = "";
+  ): { errorMessage: string; stack?: string | object; context?: string } {
+    const errorMessage = message.toString();
+    let stack: string | object = "";
     let context = "";
 
-    if (typeof message === "string") {
-      errorMessage = message;
-      if (typeof optionalParams[0] === "string") {
-        stack = optionalParams[0];
-        errorMessage += ` ${stack}`;
-      }
-      if (typeof optionalParams[1] === "string") {
-        context = optionalParams[1];
-      }
+    if (optionalParams?.length === 1) {
+      context = optionalParams[0];
+    }
+    if (optionalParams?.length === 2) {
+      stack = optionalParams[0];
+      context = optionalParams[1];
     }
 
     return { errorMessage, stack, context };
   }
 
   private captureAndLog(
-    level: "error" | "warning",
+    level: "error" | "warn",
     message: string,
-    stack?: string,
+    stack?: string | object,
     context?: string,
   ): void {
-    const formattedMessage = `${context ? context.concat(": ") : ""}${message} ${stack || ""}`;
+    const formattedMessage = `${context ? context.concat(": ") : ""}${message}}`;
+
     Sentry.withScope((scope) => {
       scope.setExtra("level", level);
       scope.setExtra("stack", stack);
       scope.setExtra("context", context);
       scope.setExtra("message", message);
-      Sentry.captureMessage(formattedMessage, level);
+      Sentry.captureMessage(formattedMessage, "warning");
     });
-    super.error(message);
+
+    if (stack) {
+      super[level](message, stack, context);
+    } else {
+      super[level](message, context);
+    }
   }
 }
