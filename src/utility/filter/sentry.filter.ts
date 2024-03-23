@@ -24,9 +24,10 @@ class SentryExceptionFilter extends BaseExceptionFilter {
           role: user.userRole,
         });
       }
+
+      Sentry.captureException(exception);
     });
 
-    Sentry.captureException(exception);
     super.catch(exception, host);
   }
 }
