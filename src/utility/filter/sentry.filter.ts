@@ -1,28 +1,25 @@
-import { ArgumentsHost, Catch, Provider } from "@nestjs/common";
+import { Catch, Provider, type ArgumentsHost } from "@nestjs/common";
 import { APP_FILTER, BaseExceptionFilter } from "@nestjs/core";
 import * as Sentry from "@sentry/node";
 
 @Catch()
 class SentryExceptionFilter extends BaseExceptionFilter {
   catch(exception: any, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const request = ctx.getRequest();
-    const user = request.user;
+    const request = host.switchToHttp()?.getRequest();
 
     Sentry.withScope((scope) => {
-      scope.setExtra("request", {
-        url: request.url,
-        method: request.method,
-        headers: request.headers,
-        body: request.body,
-        params: request.params,
-      });
-
-      if (user) {
-        scope.setUser({
-          id: user.userId,
-          role: user.userRole,
+      if (request) {
+        scope.setExtra("request", {
+          url: request.url,
+          method: request.method,
+          headers: request.headers,
+          body: request.body,
+          params: request.params,
         });
+
+        if (request?.user?.userId) {
+          scope.setUser({ id: request.user.userId });
+        }
       }
 
       Sentry.captureException(exception);
