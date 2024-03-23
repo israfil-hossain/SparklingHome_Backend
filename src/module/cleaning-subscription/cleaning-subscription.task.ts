@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
+import { ApplicationUserDocument } from "../application-user/entities/application-user.entity";
 import { CleaningBookingRepository } from "../cleaning-booking/cleaning-booking.repository";
 import { CleaningBookingDocument } from "../cleaning-booking/entities/cleaning-booking.entity";
 import { CleaningCouponRepository } from "../cleaning-coupon/cleaning-coupon.repository";
@@ -7,13 +8,11 @@ import { EmailService } from "../email/email.service";
 import { CleaningSubscriptionRepository } from "./cleaning-subscription.repository";
 import { CleaningSubscriptionService } from "./cleaning-subscription.service";
 import { CleaningSubscriptionDocument } from "./entities/cleaning-subscription.entity";
+import { CleaningSubscriptionFrequencyEnum } from "./enum/cleaning-subscription-frequency.enum";
 
 interface ICleaningBookingWithSubscription extends CleaningBookingDocument {
   subscription: CleaningSubscriptionDocument;
-  bookingUserInfo: {
-    email: string;
-    fullName: string;
-  };
+  bookingUserInfo: ApplicationUserDocument;
 }
 
 @Injectable()
@@ -37,71 +36,123 @@ export class CleaningSubscriptionTask {
     this.isTaskRunning = true;
     this.logger.log("Running subscription update task");
 
-    await this.updateSubscriptionBookings();
+    await this.notifyUsersForUpcomingBookings();
+    await this.renewSubsciptionBookings();
 
     this.isTaskRunning = false;
     this.logger.log("Finished subscription update task");
   }
 
-  //#region Private helper methos
+  //#region Private helper methods
+  private async renewSubsciptionBookings() {
+    const expiredBookings =
+      await this.cleaningBookingRepository.findAllExpiredBooking();
+    expiredBookings.forEach(
+      async (booking: ICleaningBookingWithSubscription) => {
+        try {
+          if (!booking.subscription) {
+            throw new Error("Booking does not have a subscription");
+          }
+          const subscription = booking.subscription;
 
-  private async renewBookingFromPrev(
-    booking: ICleaningBookingWithSubscription,
-  ) {
-    try {
-      if (!booking.subscription) {
-        throw new Error("Booking does not have a subscription");
-      }
-      const subscription = booking.subscription;
+          const cleaningCoupon =
+            await this.cleaningCouponRepository.getOneWhere({
+              _id: subscription.cleaningCoupon,
+              isActive: true,
+            });
 
-      const cleaningCoupon = await this.cleaningCouponRepository.getOneWhere({
-        _id: subscription.cleaningCoupon,
-        isActive: true,
-      });
+          if (!subscription.nextScheduleDate)
+            throw new Error("Next schedule date is not valid");
 
-      if (!subscription.nextScheduleDate)
-        throw new Error("Next schedule date is not valid");
+          const newBooking =
+            await this.cleaningSubscriptionService.createBookingFromSubscription(
+              subscription,
+              subscription.nextScheduleDate,
+              cleaningCoupon,
+            );
 
-      const newBooking =
-        await this.cleaningSubscriptionService.createBookingFromSubscription(
-          subscription,
-          subscription.nextScheduleDate,
-          cleaningCoupon,
-        );
+          await this.cleaningSubscriptionRepository.updateOneById(
+            subscription?._id?.toString(),
+            {
+              currentBooking: newBooking.id,
+              updatedAt: new Date(),
+            },
+          );
 
-      await this.cleaningSubscriptionRepository.updateOneById(
-        subscription?._id?.toString(),
+          await this.cleaningBookingRepository.updateOneById(booking.id, {
+            isActive: false,
+            updatedAt: new Date(),
+          });
+
+          await this.emailService.sendBookingRenewedMail(
+            booking.bookingUserInfo.email,
+            booking.bookingUserInfo.fullName,
+            newBooking.cleaningDate,
+            newBooking.cleaningDuration,
+          );
+
+          this.logger.log(
+            "Booking renewed from subscription with Id: " +
+              newBooking._id.toString(),
+          );
+        } catch (err) {
+          this.logger.error("Error renewing booking from schedular: ", err);
+        }
+      },
+    );
+  }
+
+  private async notifyUsersForUpcomingBookings() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 4);
+    const endDate = new Date(today);
+    endDate.setDate(today.getDate() - 3);
+
+    const upcomingSubscriptionBookings =
+      await this.cleaningSubscriptionRepository.getAll(
         {
-          currentBooking: newBooking.id,
-          updatedAt: new Date(),
+          subscriptionFrequency: {
+            $ne: CleaningSubscriptionFrequencyEnum.ONETIME,
+          },
+          nextScheduleDate: { $gte: startDate, $lt: endDate },
+        },
+        {
+          populate: { path: "subscribedUser" },
         },
       );
 
-      await this.cleaningBookingRepository.updateOneById(booking.id, {
-        isActive: false,
-        updatedAt: new Date(),
-      });
+    upcomingSubscriptionBookings.forEach(
+      async (subscription: CleaningSubscriptionDocument) => {
+        try {
+          if (!subscription.nextScheduleDate)
+            throw new Error(
+              "No next schedule date was found for subscription ID: " +
+                subscription.id,
+            );
 
-      this.emailService.sendBookingRenewedMail(
-        booking.bookingUserInfo.email,
-        booking.bookingUserInfo.fullName,
-        newBooking.cleaningDate,
-        newBooking.cleaningDuration,
-      );
+          const subscribedUser =
+            subscription.subscribedUser as unknown as ApplicationUserDocument;
 
-      this.logger.log(
-        "Booking renewed from subscription with Id: " +
-          newBooking._id.toString(),
-      );
-    } catch (err) {
-      this.logger.error("Error renewing booking from schedular: ", err);
-    }
-  }
+          await this.emailService.sendUpcomingBookingReminderMail(
+            subscribedUser.email,
+            subscribedUser.fullName,
+            subscription.nextScheduleDate,
+          );
 
-  private async updateSubscriptionBookings() {
-    const expiredBookings =
-      await this.cleaningBookingRepository.findAllExpiredBooking();
-    expiredBookings.forEach(this.renewBookingFromPrev);
+          this.logger.log(
+            "Booking reminder notification sent to user with email: " +
+              subscribedUser.email,
+          );
+        } catch (error) {
+          this.logger.error(
+            "Error notifying booking user from schedular: ",
+            error,
+          );
+        }
+      },
+    );
   }
 
   //#endregion
