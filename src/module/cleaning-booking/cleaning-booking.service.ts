@@ -110,8 +110,22 @@ export class CleaningBookingService {
     } catch (error) {
       if (error instanceof HttpException) throw error;
 
-      this.logger.error("Error updating bookin:", error);
+      this.logger.error("Error updating booking:", error);
       throw new BadRequestException("Could not update booking");
+    }
+  }
+
+  async getTopBookingUsers(): Promise<SuccessResponseDto> {
+    try {
+      const result =
+        await this.cleaningBookingRepository.findTopUsersByBooking();
+
+      return new SuccessResponseDto("All top users fetched", result);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+
+      this.logger.error("Error fetching booking users:", error);
+      throw new BadRequestException("Could not get booking users");
     }
   }
 }

@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
+import { ApplicationUser } from "../application-user/entities/application-user.entity";
 import { CleaningSubscription } from "../cleaning-subscription/entities/cleaning-subscription.entity";
 import { CleaningSubscriptionFrequencyEnum } from "../cleaning-subscription/enum/cleaning-subscription-frequency.enum";
 import { GenericRepository } from "../common/repository/generic-repository";
@@ -97,7 +98,7 @@ export class CleaningBookingRepository extends GenericRepository<CleaningBooking
         },
       })
       .lookup({
-        from: "applicationusers",
+        from: ApplicationUser.name.toLocaleLowerCase().concat("s"),
         let: { bookingUserId: "$bookingUser" },
         pipeline: [
           {
@@ -145,5 +146,55 @@ export class CleaningBookingRepository extends GenericRepository<CleaningBooking
     const result = await modelAggregation.exec();
 
     return result[0]?.totalEarnings ?? 0;
+  }
+
+  async findTopUsersByBooking() {
+    const modelAggregation = this.model
+      .aggregate()
+      .lookup({
+        from: ApplicationUser.name.toLocaleLowerCase().concat("s"),
+        let: { bookingUserId: "$bookingUser" },
+        pipeline: [
+          {
+            $match: {
+              isActive: true,
+              $expr: {
+                $eq: [
+                  {
+                    $toString: "$_id",
+                  },
+                  "$$bookingUserId",
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              email: 1,
+              fullName: 1,
+              profilePicture: 1,
+              dateJoined: 1,
+            },
+          },
+        ],
+        as: "bookingUser",
+      })
+      .unwind("$bookingUser")
+      .group({
+        _id: "$bookingUser",
+        totalBookingCount: { $sum: 1 },
+      })
+      .sort({ totalBookingCount: -1 })
+      .limit(10)
+      .project({
+        bookingUser: "$_id",
+        totalBookingCount: 1,
+        _id: 0,
+      });
+
+    const result = await modelAggregation.exec();
+    this.logger.log(result);
+
+    return result;
   }
 }

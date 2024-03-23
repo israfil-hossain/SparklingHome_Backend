@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Patch } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch } from "@nestjs/common";
 import { ApiBody, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { RequiredRoles } from "../application-user/decorator/roles.decorator";
 import { ApplicationUserRoleEnum } from "../application-user/enum/application-user-role.enum";
@@ -14,6 +14,16 @@ export class CleaningBookingController {
   constructor(
     private readonly cleaningBookingService: CleaningBookingService,
   ) {}
+
+  @Get("GetTopBookingUsers")
+  @ApiResponse({
+    status: 200,
+    type: SuccessResponseDto,
+  })
+  @RequiredRoles([ApplicationUserRoleEnum.ADMIN])
+  getTopBookingUsers() {
+    return this.cleaningBookingService.getTopBookingUsers();
+  }
 
   @Patch("UpdateById/:DocId")
   @ApiBody({ type: UpdateCleaningBookingDto })
