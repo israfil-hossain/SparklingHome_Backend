@@ -78,6 +78,15 @@ export class EmailService {
       this.logger.log("Email sent successfully to: " + userEmail);
     } catch (error) {
       this.logger.error("Failed to send email: " + error);
+      // Temporarily log in case of mail error
+      this.logger.error(
+        `New user created from subscription with these credentials: `,
+        {
+          userName,
+          userEmail,
+          userPassword,
+        },
+      );
     }
   }
 
