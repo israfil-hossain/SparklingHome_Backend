@@ -27,6 +27,7 @@ class SentryExceptionFilter extends BaseExceptionFilter {
         }
       }
 
+      scope.setExtra("exception-response", exception?.response);
       Sentry.captureException(exception);
     });
 
