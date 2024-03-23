@@ -47,14 +47,16 @@ export class SentryLogger extends ConsoleLogger {
     stack?: string | object,
     context?: string,
   ): void {
-    const formattedMessage = `${context ? context.concat(": ") : ""}${message}}`;
+    const formattedMessage = `${context ? context.concat(": ") : ""}${message}`;
+    const sentryLevel: "error" | "warning" =
+      level === "warn" ? "warning" : level;
 
     Sentry.withScope((scope) => {
       scope.setExtra("level", level);
       scope.setExtra("stack", stack);
       scope.setExtra("context", context);
       scope.setExtra("message", message);
-      Sentry.captureMessage(formattedMessage, "warning");
+      Sentry.captureMessage(formattedMessage, sentryLevel);
     });
 
     if (stack) {
