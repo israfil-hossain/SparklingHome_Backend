@@ -19,7 +19,7 @@ async function bootstrap() {
 
   const cfg = app.get(ConfigService);
   configureSwaggerUI(app);
-  configureSentryService(app, cfg);
+  configureSentryService(cfg);
 
   const port = parseInt(cfg.get("PORT", "4000"), 10);
   await app.listen(port);
