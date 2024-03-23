@@ -8,6 +8,8 @@ import {
   CleaningBookingDocument,
   CleaningBookingType,
 } from "./entities/cleaning-booking.entity";
+import { CleaningBookingPaymentStatusEnum } from "./enum/cleaning-booking-payment-status.enum";
+import { CleaningBookingStatusEnum } from "./enum/cleaning-booking-status.enum";
 
 @Injectable()
 export class CleaningBookingRepository extends GenericRepository<CleaningBookingDocument> {
@@ -123,5 +125,25 @@ export class CleaningBookingRepository extends GenericRepository<CleaningBooking
 
     const result = await modelAggregation.exec();
     return result;
+  }
+
+  async getTotalBookingEarnings(): Promise<number> {
+    const modelAggregation = this.model
+      .aggregate()
+      .sort({ createdAt: -1 })
+      .match({
+        bookingStatus: CleaningBookingStatusEnum.BookingCompleted,
+        paymentStatus: CleaningBookingPaymentStatusEnum.PaymentCompleted,
+      })
+      .group({
+        _id: null,
+        totalEarnings: {
+          $sum: "$totalAmount",
+        },
+      });
+
+    const result = await modelAggregation.exec();
+
+    return result[0]?.totalEarnings ?? 0;
   }
 }

@@ -30,11 +30,19 @@ export class CleaningTimeSlotController {
   }
 
   @Get("GetAll")
+  @ApiResponse({
+    status: 200,
+    type: SuccessResponseDto,
+  })
   findAll() {
     return this.cleaningTimeSlotService.findAll();
   }
 
   @Get("GetAllByWeekdays")
+  @ApiResponse({
+    status: 200,
+    type: SuccessResponseDto,
+  })
   @IsPublic()
   findAllByWeekdays() {
     return this.cleaningTimeSlotService.findAllByWeekdays();

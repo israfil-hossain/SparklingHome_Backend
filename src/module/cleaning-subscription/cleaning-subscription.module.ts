@@ -35,5 +35,6 @@ import {
     CleaningSubscriptionTask,
     CleaningSubscriptionRepository,
   ],
+  exports: [CleaningSubscriptionRepository],
 })
 export class CleaningSubscriptionModule {}
