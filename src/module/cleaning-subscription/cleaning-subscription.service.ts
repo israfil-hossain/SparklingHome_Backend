@@ -231,6 +231,26 @@ export class CleaningSubscriptionService {
           "No active subscription found with id: " + subscriptionId,
         );
 
+      if (updateDto.nextScheduleDate) {
+        if (
+          subscription.subscriptionFrequency ===
+          CleaningSubscriptionFrequencyEnum.ONETIME
+        )
+          throw new BadRequestException(
+            "Cannot change next schedule date for onetime subscription",
+          );
+
+        if (
+          subscription.nextScheduleDate &&
+          new Date(subscription.nextScheduleDate).getTime() >
+            new Date(updateDto.nextScheduleDate).getTime()
+        ) {
+          throw new BadRequestException(
+            "Next schedule date cannot be before current schedule date",
+          );
+        }
+      }
+
       const updateSubscription =
         await this.cleaningSubscriptionRepository.updateOneById(
           subscription.id,
@@ -241,7 +261,7 @@ export class CleaningSubscriptionService {
           },
         );
 
-      if (updateDto.areaInSquareMeters || updateDto.cleaningDurationInHours) {
+      if (updateDto.cleaningDurationInHours) {
         const currentBooking =
           subscription.currentBooking as unknown as CleaningBookingDocument;
 
@@ -265,8 +285,17 @@ export class CleaningSubscriptionService {
             cleaningCoupon,
           );
 
+          await this.cleaningBookingRepository.updateOneById(
+            currentBooking.id,
+            {
+              isActive: false,
+              updatedBy: userId,
+              updatedAt: new Date(),
+            },
+          );
+
           await this.cleaningSubscriptionRepository.updateOneById(
-            subscription.id,
+            subscription._id.toString(),
             {
               currentBooking: newBooking._id?.toString(),
               updatedBy: userId,
