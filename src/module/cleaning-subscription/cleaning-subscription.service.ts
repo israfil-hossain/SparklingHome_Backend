@@ -460,27 +460,40 @@ export class CleaningSubscriptionService {
   }
 
   //#region Shared internal methods
-  private getNextScheduleDate(
+  getNextScheduleDate(
     previousDate: Date,
     frequency: CleaningSubscriptionFrequencyEnum,
   ): Date | null {
-    const currentDate = new Date(previousDate);
+    const currentDate = new Date();
 
+    const nextScheduleDate = new Date(previousDate);
     switch (frequency) {
       case CleaningSubscriptionFrequencyEnum.WEEKLY:
-        currentDate.setDate(currentDate.getDate() + 7);
+        nextScheduleDate.setDate(nextScheduleDate.getDate() + 7);
         break;
       case CleaningSubscriptionFrequencyEnum.BIWEEKLY:
-        currentDate.setDate(currentDate.getDate() + 14);
+        nextScheduleDate.setDate(nextScheduleDate.getDate() + 14);
         break;
       case CleaningSubscriptionFrequencyEnum.MONTHLY:
-        currentDate.setMonth(currentDate.getMonth() + 1);
+        nextScheduleDate.setMonth(nextScheduleDate.getMonth() + 1);
         break;
       default:
         return null;
     }
 
-    return currentDate;
+    if (nextScheduleDate < currentDate) {
+      return new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        currentDate.getDate() + 2,
+        nextScheduleDate.getHours(),
+        nextScheduleDate.getMinutes(),
+        nextScheduleDate.getSeconds(),
+        nextScheduleDate.getMilliseconds(),
+      );
+    }
+
+    return nextScheduleDate;
   }
 
   async createBookingFromSubscription(
