@@ -258,11 +258,11 @@ export class CleaningSubscriptionService {
 
         if (
           subscription.nextScheduleDate &&
-          new Date(subscription.nextScheduleDate).getTime() >
+          new Date(subscription.nextScheduleDate).getTime() >=
             new Date(updateDto.nextScheduleDate).getTime()
         ) {
           throw new BadRequestException(
-            "Next schedule date cannot be before current schedule date",
+            "Next schedule date cannot be before or same as current schedule date",
           );
         }
 
