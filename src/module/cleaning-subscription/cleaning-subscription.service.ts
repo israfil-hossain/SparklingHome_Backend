@@ -194,7 +194,10 @@ export class CleaningSubscriptionService {
       this.emailService.sendNewSubscriptionMail(
         subscriptionUser.email,
         subscriptionUser.fullName ?? "User",
-        newSubscription.subscriptionFrequency,
+        newSubscription.subscriptionFrequency.replace(
+          /([a-z])([A-Z])/g,
+          "$1 $2",
+        ),
         newSubscription.startDate,
       );
 
@@ -202,7 +205,10 @@ export class CleaningSubscriptionService {
         subscriptionUser.email,
         subscriptionUser.fullName ?? "User",
         newSubscription.id,
-        newSubscription.subscriptionFrequency,
+        newSubscription.subscriptionFrequency.replace(
+          /([a-z])([A-Z])/g,
+          "$1 $2",
+        ),
         newSubscription.startDate,
       );
 
