@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -61,7 +62,7 @@ export class CleaningSubscriptionController {
     );
   }
 
-  @Patch("CancelSubscriptionById/:DocId")
+  @Delete("CancelSubscriptionById/:DocId")
   @ApiResponse({
     status: 200,
     type: SuccessResponseDto,
