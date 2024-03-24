@@ -20,7 +20,7 @@ export class EmailService {
     );
     this.adminEmailAddress = this.configService.get(
       "ADMIN_EMAIL_ADDRESS",
-      "glansandehem.official@gmail.com",
+      "admin@glansandehem.se",
     );
   }
 

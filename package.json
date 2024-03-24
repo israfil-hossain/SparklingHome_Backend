@@ -11,7 +11,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "format": "prettier --write \"src/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.{ts,hbs}\"",
     "lint": "eslint \"src/**/*.ts\" --fix"
   },
   "dependencies": {
@@ -62,3 +62,4 @@
     "typescript": "^5.3.3"
   }
 }
+

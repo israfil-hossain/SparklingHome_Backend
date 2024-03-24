@@ -13,7 +13,7 @@ import { EncryptionModule } from "./module/encryption/encryption.module";
 import { ImageMetaModule } from "./module/image-meta/image-meta.module";
 import { SentryExceptionFilterProvider } from "./utility/filter/sentry.filter";
 import { ValidationProvider } from "./utility/provider/validation.provider";
-import { DashboardModule } from './module/dashboard/dashboard.module';
+import { DashboardModule } from "./module/dashboard/dashboard.module";
 
 @Module({
   imports: [

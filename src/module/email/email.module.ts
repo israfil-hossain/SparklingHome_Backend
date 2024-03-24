@@ -10,21 +10,25 @@ import { EmailService } from "./email.service";
   imports: [
     MailerModule.forRootAsync({
       useFactory: async (configService: ConfigService) => ({
+        // transport: {
+        //   service: "gmail",
+        //   auth: {
+        //     user: configService.get<string>("MAILER_USER_EMAIL"),
+        //     pass: configService.get<string>("MAILER_USER_PASSWORD"),
+        //   },
+        // },
         transport: {
-          service: "gmail",
+          host: configService.get<string>("MAILER_HOST_SERVER", ""),
+          port: 465,
+          secure: true,
           auth: {
-            user: configService.get<string>("MAILER_USER_EMAIL"),
-            pass: configService.get<string>("MAILER_USER_PASSWORD"),
+            user: configService.get<string>("MAILER_USER_EMAIL", ""),
+            pass: configService.get<string>("MAILER_USER_PASSWORD", ""),
           },
         },
         defaults: {
           from: `Glansandehem <${configService.get<string>(
-            "MAILER_FROM",
-            "glansandehem.official@gmail.com",
-          )}>`,
-          replyTo: `Glansandehem <${configService.get<string>(
-            "MAILER_FROM",
-            "glansandehem.official@gmail.com",
+            "MAILER_USER_EMAIL",
           )}>`,
         },
         template: {
