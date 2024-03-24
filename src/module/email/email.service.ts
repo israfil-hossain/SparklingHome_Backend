@@ -199,4 +199,31 @@ export class EmailService {
       this.logger.error("Failed to send booking renewed email: " + error);
     }
   }
+  async sendPaymentReceivedMail(
+    userEmail: string,
+    userName: string = "User",
+    cleaningDate: Date,
+    paymentAmount: number,
+  ) {
+    try {
+      await this.mailerService.sendMail({
+        to: userEmail,
+        subject: "Payment Received",
+        template: "./payment-received",
+        context: {
+          companyName: this.companyName,
+          companyWebsite: this.staticWebsiteUrl,
+          userName: userName,
+          paymentAmount: paymentAmount.toFixed(2),
+          paymentDate: new Date().toDateString(),
+          cleaningDate: new Date(cleaningDate).toDateString(),
+        },
+      });
+      this.logger.log(
+        `Payment received email sent successfully to: ${userEmail}`,
+      );
+    } catch (error) {
+      this.logger.error("Failed to send payment received email: " + error);
+    }
+  }
 }

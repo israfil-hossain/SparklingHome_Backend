@@ -8,11 +8,13 @@ import {
 import { ConfigService } from "@nestjs/config";
 import axios, { AxiosInstance } from "axios";
 import { UpdateQuery } from "mongoose";
+import { ApplicationUserDocument } from "../application-user/entities/application-user.entity";
 import { CleaningBookingRepository } from "../cleaning-booking/cleaning-booking.repository";
 import { CleaningBookingDocument } from "../cleaning-booking/entities/cleaning-booking.entity";
 import { CleaningBookingPaymentStatusEnum } from "../cleaning-booking/enum/cleaning-booking-payment-status.enum";
 import { CleaningBookingStatusEnum } from "../cleaning-booking/enum/cleaning-booking-status.enum";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
+import { EmailService } from "../email/email.service";
 import { PaymentIntentResponseDto } from "./dto/payment-intent-response.dto";
 import { PaymentReceiveDocument } from "./entities/payment-receive.entity";
 import { PaymentWebhookEventEnum } from "./enum/payment-webhook-event.enum";
@@ -38,6 +40,7 @@ export class PaymentReceiveService {
     private readonly paymentReceiveRepository: PaymentReceiveRepository,
     private readonly paymentEventRepository: PaymentEventRepository,
     private readonly cleaningBookingRepository: CleaningBookingRepository,
+    private readonly emailService: EmailService,
   ) {
     this.staticServerUrl = this.configService.get(
       "SERVER_URL",
@@ -257,10 +260,15 @@ export class PaymentReceiveService {
       throw new BadRequestException("Invalid payment receive");
     }
 
-    const booking = await this.cleaningBookingRepository.getOneWhere({
-      isActive: true,
-      paymentReceive: paymentReceive.id,
-    });
+    const booking = await this.cleaningBookingRepository.getOneWhere(
+      {
+        isActive: true,
+        paymentReceive: paymentReceive.id,
+      },
+      {
+        populate: "bookingUser",
+      },
+    );
 
     if (!booking) {
       this.logger.error("Invalid booking for payment receive");
@@ -280,6 +288,15 @@ export class PaymentReceiveService {
 
       paymentReceiveUpdate.totalDue = totalDue.toFixed(2);
       paymentReceiveUpdate.totalPaid = totalPaid.toFixed(2);
+
+      const bookingUser =
+        booking.bookingUser as unknown as ApplicationUserDocument;
+      this.emailService.sendPaymentReceivedMail(
+        bookingUser.email,
+        bookingUser.fullName,
+        booking.cleaningDate,
+        totalPaid,
+      );
     }
 
     await this.paymentReceiveRepository.updateOneById(
