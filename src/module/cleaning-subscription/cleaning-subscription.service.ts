@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import { FilterQuery } from "mongoose";
 import { ApplicationUserRepository } from "../application-user/application-user.repository";
+import { ApplicationUserDocument } from "../application-user/entities/application-user.entity";
 import { ApplicationUserRoleEnum } from "../application-user/enum/application-user-role.enum";
 import { CleaningBookingRepository } from "../cleaning-booking/cleaning-booking.repository";
 import { CleaningBookingDocument } from "../cleaning-booking/entities/cleaning-booking.entity";
@@ -190,6 +191,21 @@ export class CleaningSubscriptionService {
         throw error;
       }
 
+      this.emailService.sendNewSubscriptionMail(
+        subscriptionUser.email,
+        subscriptionUser.fullName ?? "User",
+        newSubscription.subscriptionFrequency,
+        newSubscription.startDate,
+      );
+
+      this.emailService.sendNewSubscriptionMailToAdmin(
+        subscriptionUser.email,
+        subscriptionUser.fullName ?? "User",
+        newSubscription.id,
+        newSubscription.subscriptionFrequency,
+        newSubscription.startDate,
+      );
+
       const response = new IdNameResponseDto(newSubscription.id);
       return new SuccessResponseDto(
         "Subscription created successfully",
@@ -222,7 +238,7 @@ export class CleaningSubscriptionService {
         await this.cleaningSubscriptionRepository.getOneWhere(
           subscriptionQuery,
           {
-            populate: ["currentBooking", "cleaningCoupon"],
+            populate: ["currentBooking", "cleaningCoupon", "subscribedUser"],
           },
         );
 
@@ -249,6 +265,14 @@ export class CleaningSubscriptionService {
             "Next schedule date cannot be before current schedule date",
           );
         }
+
+        const subscribedUser =
+          subscription.subscribedUser as unknown as ApplicationUserDocument;
+        this.emailService.sendRescheduleNotification(
+          subscribedUser.email,
+          subscribedUser.fullName ?? "User",
+          updateDto.nextScheduleDate,
+        );
       }
 
       const updateSubscription =

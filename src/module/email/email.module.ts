@@ -20,11 +20,11 @@ import { EmailService } from "./email.service";
         defaults: {
           from: `Glansandehem <${configService.get<string>(
             "MAILER_FROM",
-            "no-reply@sparkling-home.com",
+            "glansandehem.official@gmail.com",
           )}>`,
           replyTo: `Glansandehem <${configService.get<string>(
             "MAILER_FROM",
-            "no-reply@sparkling-home.com",
+            "glansandehem.official@gmail.com",
           )}>`,
         },
         template: {

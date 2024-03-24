@@ -8,6 +8,7 @@ export class EmailService {
   private readonly logger: Logger = new Logger(EmailService.name);
   private readonly companyName: string = "Glansandehem";
   private readonly staticWebsiteUrl: string;
+  private readonly adminEmailAddress: string;
 
   constructor(
     private mailerService: MailerService,
@@ -16,6 +17,10 @@ export class EmailService {
     this.staticWebsiteUrl = this.configService.get(
       "WEBSITE_URL",
       "https://app.glansandehem.se",
+    );
+    this.adminEmailAddress = this.configService.get(
+      "ADMIN_EMAIL_ADDRESS",
+      "glansandehem.official@gmail.com",
     );
   }
 
@@ -199,6 +204,7 @@ export class EmailService {
       this.logger.error("Failed to send booking renewed email: " + error);
     }
   }
+
   async sendPaymentReceivedMail(
     userEmail: string,
     userName: string = "User",
@@ -224,6 +230,95 @@ export class EmailService {
       );
     } catch (error) {
       this.logger.error("Failed to send payment received email: " + error);
+    }
+  }
+
+  async sendNewSubscriptionMail(
+    userEmail: string,
+    userName: string,
+    subscriptionPlan: string,
+    cleaningDate: Date,
+  ) {
+    try {
+      await this.mailerService.sendMail({
+        to: userEmail,
+        subject: "New Cleaning Subscription Confirmation",
+        template: "./new-subscription-user",
+        context: {
+          companyName: this.companyName,
+          companyWebsite: this.staticWebsiteUrl,
+          userName: userName,
+          subscriptionPlan: subscriptionPlan,
+          cleaningDate: new Date(cleaningDate).toDateString(),
+        },
+      });
+      this.logger.log(
+        `New cleaning subscription confirmation email sent successfully to: ${userEmail}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        "Failed to send new cleaning subscription confirmation email: " + error,
+      );
+    }
+  }
+
+  async sendNewSubscriptionMailToAdmin(
+    userEmail: string,
+    userName: string,
+    subscriptionId: string,
+    subscriptionPlan: string,
+    cleaningDate: Date,
+  ) {
+    try {
+      await this.mailerService.sendMail({
+        to: this.adminEmailAddress,
+        subject: "New Subscription Notification",
+        template: "./new-subscription-admin",
+        context: {
+          userName: userName,
+          userEmail: userEmail,
+          subscriptionId: subscriptionId,
+          subscriptionPlan: subscriptionPlan,
+          subscriptionDate: new Date().toDateString(),
+          startDate: new Date(cleaningDate).toDateString(),
+        },
+      });
+      this.logger.log(
+        "New subscription notification sent to admin successfully.",
+      );
+    } catch (error) {
+      this.logger.error(
+        "Failed to send new subscription notification to admin: " + error,
+      );
+    }
+  }
+
+  async sendRescheduleNotification(
+    userEmail: string,
+    userName: string,
+    rescheduledCleaningDate: Date,
+  ) {
+    try {
+      await this.mailerService.sendMail({
+        to: userEmail,
+        subject: "Cleaning Schedule Update",
+        template: "./reschedule-notification",
+        context: {
+          companyName: this.companyName,
+          companyWebsite: this.staticWebsiteUrl,
+          userName: userName,
+          rescheduledCleaningDate: new Date(
+            rescheduledCleaningDate,
+          ).toDateString(),
+        },
+      });
+      this.logger.log(
+        `Reschedule notification email sent successfully to: ${userEmail}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        "Failed to send reschedule notification email: " + error,
+      );
     }
   }
 }
