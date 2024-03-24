@@ -307,9 +307,7 @@ export class EmailService {
           companyName: this.companyName,
           companyWebsite: this.staticWebsiteUrl,
           userName: userName,
-          rescheduledCleaningDate: new Date(
-            rescheduledCleaningDate,
-          ).toDateString(),
+          nextCleaningDate: new Date(rescheduledCleaningDate).toDateString(),
         },
       });
       this.logger.log(
