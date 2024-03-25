@@ -1,4 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { Transform } from "class-transformer";
 import {
   IsBoolean,
   IsDate,
@@ -23,6 +24,7 @@ export class CreateCleaningSubscriptionDto {
   @ApiProperty({ description: "Email", example: "john@example.com" })
   @IsNotEmpty({ message: "Email is required" })
   @IsEmail({}, { message: "Invalid email format" })
+  @Transform(({ value }) => value?.toLowerCase())
   userEmail: string;
 
   @ApiProperty({ description: "Phone Number", example: "1234567890" })

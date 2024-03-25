@@ -12,6 +12,7 @@ export class CreateApplicationUserDto {
   @ApiProperty({ description: "User's email", example: "user@example.com" })
   @IsNotEmpty({ message: "Email is required" })
   @IsEmail({}, { message: "Invalid email format" })
+  @Transform(({ value }) => value?.toLowerCase())
   email: string;
 
   @ApiProperty({ description: "User's password", example: "Password123!" })

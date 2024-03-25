@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 import { IsOptional, IsString } from "class-validator";
 import { PaginationQuery } from "../../common/dto/pagintation-query.dto";
 
@@ -11,6 +11,7 @@ export class ListApplicationUserQuery extends PaginationQuery {
   @Type(() => String)
   @IsString()
   @IsOptional()
+  @Transform(({ value }) => value?.toLowerCase())
   public readonly Email?: string;
 
   @ApiProperty({

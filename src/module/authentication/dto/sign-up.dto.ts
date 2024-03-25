@@ -1,4 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { Transform } from "class-transformer";
 import { IsEmail, IsNotEmpty, Matches, MinLength } from "class-validator";
 import { CreateApplicationUserDto } from "../../application-user/dto/create-application-user.dto";
 
@@ -9,6 +10,7 @@ export class SignUpDto extends CreateApplicationUserDto {
   })
   @IsNotEmpty({ message: "Email should not be empty" })
   @IsEmail({}, { message: "Invalid email format" })
+  @Transform(({ value }) => value?.toLowerCase())
   email: string;
 
   @ApiProperty({
