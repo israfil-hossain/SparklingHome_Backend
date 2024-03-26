@@ -72,7 +72,7 @@ export class EmailService {
   async sendBookingConfirmedMail(
     userEmail: string,
     bookingDateTime: Date,
-    bookingFrequency: CleaningSubscriptionFrequencyEnum,
+    subscriptionFrequency: CleaningSubscriptionFrequencyEnum,
   ) {
     try {
       const bookingDate = new Date(bookingDateTime);
@@ -83,7 +83,7 @@ export class EmailService {
         context: {
           bookingDateTime:
             bookingDate.toDateString() + " " + bookingDate.toTimeString(),
-          bookingFrequency: bookingFrequency,
+          bookingFrequency: subscriptionFrequency,
         },
       });
       this.logger.log(
@@ -156,19 +156,21 @@ export class EmailService {
 
   async sendUpcomingBookingReminderMail(
     userEmail: string,
-    userName: string = "User",
-    cleaningDate: Date,
+    rescheduledCleaningDate: Date,
+    subscriptionFrequency: CleaningSubscriptionFrequencyEnum,
   ) {
     try {
+      const cleaningDate = new Date(rescheduledCleaningDate);
       await this.mailerService.sendMail({
         to: userEmail,
-        subject: "Upcoming Booking Notification",
-        template: "./upcoming-booking",
+        subject:
+          "Soft reminder! Upcoming cleaning services have been initially confirmed",
+        template: "./reschedule-notification",
         context: {
-          companyName: this.companyName,
-          companyWebsite: this.staticWebsiteUrl,
-          userName: userName,
-          cleaningDate: new Date(cleaningDate).toDateString(),
+          subscriptionFrequency: subscriptionFrequency,
+          bookingDate: cleaningDate.toDateString(),
+          bookingTime: cleaningDate.toTimeString(),
+          cancelLink: `${this.staticWebsiteUrl}/profile`,
         },
       });
       this.logger.log(

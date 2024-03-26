@@ -73,8 +73,8 @@ export class CleaningSubscriptionTask {
 
         await this.emailService.sendUpcomingBookingReminderMail(
           subscribedUser.email,
-          subscribedUser.fullName,
           subscription.nextScheduleDate,
+          subscription.subscriptionFrequency,
         );
 
         this.logger.log(
