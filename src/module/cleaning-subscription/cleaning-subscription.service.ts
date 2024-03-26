@@ -138,9 +138,9 @@ export class CleaningSubscriptionService {
           password: userPasswordHash,
         });
 
-        this.emailService.sendUserCredentialsMail(
+        this.emailService.sendNewSubscriptionMail(
           subscriptionUser.email,
-          subscriptionUser.fullName ?? "User",
+          subscriptionUser.fullName,
           userPassword,
         );
       }
@@ -190,16 +190,6 @@ export class CleaningSubscriptionService {
         );
         throw error;
       }
-
-      this.emailService.sendNewSubscriptionMail(
-        subscriptionUser.email,
-        subscriptionUser.fullName ?? "User",
-        newSubscription.subscriptionFrequency.replace(
-          /([a-z])([A-Z])/g,
-          "$1 $2",
-        ),
-        newSubscription.startDate,
-      );
 
       this.emailService.sendNewSubscriptionMailToAdmin(
         newSubscription.startDate,

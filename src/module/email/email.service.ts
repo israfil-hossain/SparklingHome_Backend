@@ -48,50 +48,15 @@ export class EmailService {
       await this.mailerService.sendMail({
         to: userEmail,
         subject: "Welcome abroad",
-        template: "./signup",
+        template: "./new-subscription-user",
         context: {
-          companyName: this.companyName,
-          companyWebsite: this.staticWebsiteUrl,
-          userName: userName || "",
-          userEmail: userEmail || "",
+          userName: userName,
+          email: userEmail,
         },
       });
       this.logger.log("Email sent successfully to: " + userEmail);
     } catch (error) {
       this.logger.error("Failed to send email: " + error);
-    }
-  }
-
-  async sendUserCredentialsMail(
-    userEmail: string,
-    userName: string = "User",
-    userPassword: string,
-  ) {
-    try {
-      await this.mailerService.sendMail({
-        to: userEmail,
-        subject: "Welcome abroad",
-        template: "./signup",
-        context: {
-          companyName: this.companyName,
-          companyWebsite: this.staticWebsiteUrl,
-          userName: userName || "",
-          userEmail: userEmail || "",
-          userPassword: userPassword || "",
-        },
-      });
-      this.logger.log("Email sent successfully to: " + userEmail);
-    } catch (error) {
-      this.logger.error("Failed to send email: " + error);
-      // Temporarily log in case of mail error
-      this.logger.error(
-        `New user created from subscription with these credentials: `,
-        {
-          userName,
-          userEmail,
-          userPassword,
-        },
-      );
     }
   }
 
@@ -237,21 +202,18 @@ export class EmailService {
 
   async sendNewSubscriptionMail(
     userEmail: string,
-    userName: string,
-    subscriptionPlan: string,
-    cleaningDate: Date,
+    userName: string = "User",
+    userPassword?: string,
   ) {
     try {
       await this.mailerService.sendMail({
         to: userEmail,
-        subject: "New Cleaning Subscription Confirmation",
+        subject: "Your booking request has been received.",
         template: "./new-subscription-user",
         context: {
-          companyName: this.companyName,
-          companyWebsite: this.staticWebsiteUrl,
           userName: userName,
-          subscriptionPlan: subscriptionPlan,
-          cleaningDate: new Date(cleaningDate).toDateString(),
+          email: userEmail,
+          password: userPassword,
         },
       });
       this.logger.log(
