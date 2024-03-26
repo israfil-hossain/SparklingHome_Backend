@@ -1,7 +1,6 @@
 import { MailerService } from "@nestjs-modules/mailer";
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { CleaningBookingDocument } from "../cleaning-booking/entities/cleaning-booking.entity";
 import { CleaningSubscriptionFrequencyEnum } from "../cleaning-subscription/enum/cleaning-subscription-frequency.enum";
 
 @Injectable()
@@ -94,29 +93,14 @@ export class EmailService {
     }
   }
 
-  async sendBookingServedMail(
-    userEmail: string,
-    userName: string = "User",
-    booking: CleaningBookingDocument,
-  ) {
+  async sendBookingServedMail(userEmail: string) {
     try {
       await this.mailerService.sendMail({
         to: userEmail,
-        subject: "Payment Required for Your Cleaning Service",
+        subject: "Completion of Cleaning Service and Payment Reminder",
         template: "./booking-served",
         context: {
-          companyName: this.companyName,
-          companyWebsite: this.staticWebsiteUrl,
-          userName: userName || "",
-          cleaningDate: new Date(booking.cleaningDate).toDateString(),
-          cleaningDuration: booking.cleaningDuration,
-          cleaningPrice: booking.cleaningPrice,
-          suppliesCharges: booking.suppliesCharges,
-          discountAmount: booking.discountAmount,
-          vatAmount: booking.vatAmount,
-          additionalCharges: booking.additionalCharges,
-          totalAmount: booking.totalAmount,
-          remarks: booking.remarks || "",
+          profileLink: `${this.staticWebsiteUrl}/profile`,
         },
       });
       this.logger.log(

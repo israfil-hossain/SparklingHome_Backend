@@ -135,11 +135,7 @@ export class CleaningBookingService {
         this.logger.log("Sending email to customer");
         const bookingUser =
           currentBooking.bookingUser as unknown as ApplicationUserDocument;
-        this.emailService.sendBookingServedMail(
-          bookingUser.email,
-          bookingUser.fullName,
-          currentBooking,
-        );
+        this.emailService.sendBookingServedMail(bookingUser.email);
       }
 
       const updatedBooking = await this.cleaningBookingRepository.updateOneById(
