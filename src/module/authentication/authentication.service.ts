@@ -264,13 +264,8 @@ export class AuthenticationService {
 
   async resetPasswordRequest(
     resetPasswordRequestDto: ResetPasswordRequestDto,
-    originUrl: string | null,
   ): Promise<SuccessResponseDto> {
     try {
-      if (!originUrl) {
-        throw new BadRequestException("Origin URL is required");
-      }
-
       const user = await this.applicationUserRepository.getOneWhere({
         email: resetPasswordRequestDto.email,
         isActive: true,
@@ -283,15 +278,15 @@ export class AuthenticationService {
       }
 
       const currentTime = Date.now();
-      const resetToken = this.encryptionService.encryptString(
+      const userIdAsToken = this.encryptionService.encryptString(
         `${user.id}-${currentTime}`,
       );
-      const resetLink = `${originUrl}/reset-password/${resetToken}`;
+      const resetToken = encodeURI(userIdAsToken);
 
       this.mailService.sendForgetPasswordMail(
         user.email,
         user.fullName,
-        resetLink,
+        resetToken,
       );
 
       return new SuccessResponseDto("Password reset mail sent successfully");

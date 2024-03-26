@@ -1,6 +1,5 @@
 import { Body, Controller, Get, HttpCode, Post } from "@nestjs/common";
 import { ApiBody, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { OriginHeader } from "../../utility/decorator/request-header.decorator";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { AuthenticationService } from "./authentication.service";
 import { AuthUserId } from "./decorator/auth-user-id.decorator";
@@ -109,12 +108,8 @@ export class AuthenticationController {
   })
   resetPasswordRequest(
     @Body() resetPasswordRequestDto: ResetPasswordRequestDto,
-    @OriginHeader() origin: string,
   ) {
-    return this.authService.resetPasswordRequest(
-      resetPasswordRequestDto,
-      origin,
-    );
+    return this.authService.resetPasswordRequest(resetPasswordRequestDto);
   }
 
   @Post("ResetPassword")

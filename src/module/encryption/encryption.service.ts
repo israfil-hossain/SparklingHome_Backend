@@ -88,7 +88,10 @@ export class EncryptionService {
       let encrypted = cipher.update(text, "utf8", "base64");
       encrypted += cipher.final("base64");
 
-      return encrypted;
+      return encrypted
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "");
     } catch (_) {
       throw new InternalServerErrorException("Encryption failed");
     }
@@ -98,6 +101,7 @@ export class EncryptionService {
     if (!cipherText) throw new Error(cipherText);
 
     try {
+      const base64Text = cipherText.replace(/-/g, "+").replace(/_/g, "/");
       const key = createHash("sha256")
         .update(this.secretKey)
         .digest("base64")
@@ -105,7 +109,7 @@ export class EncryptionService {
       const iv = Buffer.alloc(this.ivLength, 0);
 
       const decipher = createDecipheriv(this.algorithm, key, iv);
-      let decrypted = decipher.update(cipherText, "base64", "utf8");
+      let decrypted = decipher.update(base64Text, "base64", "utf8");
       decrypted += decipher.final("utf8");
 
       return decrypted;

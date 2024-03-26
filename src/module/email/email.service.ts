@@ -98,9 +98,11 @@ export class EmailService {
   async sendForgetPasswordMail(
     userEmail: string,
     userName: string = "User",
-    resetLink: string,
+    resetToken: string,
   ) {
     try {
+      const resetLink = `${this.staticWebsiteUrl}/reset-password/${resetToken}`;
+
       await this.mailerService.sendMail({
         to: userEmail,
         subject: "Reset Your Password",
