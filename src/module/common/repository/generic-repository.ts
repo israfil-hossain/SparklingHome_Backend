@@ -43,6 +43,10 @@ export class GenericRepository<T extends Document> {
     options: QueryOptions = {},
   ): Promise<FlattenMaps<T>[]> {
     try {
+      if (!options.sort) {
+        options.sort = { createdAt: -1 };
+      }
+
       const result = await this.internalModel
         .find(filter, null, options)
         .lean()

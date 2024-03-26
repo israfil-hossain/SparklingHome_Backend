@@ -73,6 +73,7 @@ export class ApplicationUserService {
         limit: PageSize,
         skip,
         select: "-role",
+        sort: { dateJoined: -1 },
       });
 
       return new PaginatedResponseDto(totalRecords, Page, PageSize, result);
