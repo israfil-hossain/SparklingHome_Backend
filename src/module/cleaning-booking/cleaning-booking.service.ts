@@ -27,7 +27,11 @@ export class CleaningBookingService {
   ) {}
 
   async getAllPaidBooking(
-    { Page = 1, PageSize = 10 }: ListCleaningBookingQueryDto,
+    {
+      Page = 1,
+      PageSize = 10,
+      BookingUserId = "",
+    }: ListCleaningBookingQueryDto,
     { userId, userRole }: ITokenPayload,
   ): Promise<PaginatedResponseDto> {
     try {
@@ -39,6 +43,8 @@ export class CleaningBookingService {
 
       if (userRole !== ApplicationUserRoleEnum.ADMIN) {
         searchQuery.bookingUser = userId;
+      } else if (!!BookingUserId) {
+        searchQuery.bookingUser = BookingUserId;
       }
 
       // Pagination setup
