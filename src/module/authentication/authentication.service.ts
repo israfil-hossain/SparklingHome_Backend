@@ -134,8 +134,6 @@ export class AuthenticationService {
       await user.save();
 
       const tokenDto = new TokenResponseDto(accessToken, refreshToken, user);
-      this.mailService.sendUserSigninMail(user.email, user.fullName ?? "");
-
       return new SuccessResponseDto("Authenticated successfully", tokenDto);
     } catch (error) {
       if (error instanceof HttpException) throw error;

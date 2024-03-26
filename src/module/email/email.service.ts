@@ -2,6 +2,7 @@ import { MailerService } from "@nestjs-modules/mailer";
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { CleaningBookingDocument } from "../cleaning-booking/entities/cleaning-booking.entity";
+import { CleaningSubscriptionFrequencyEnum } from "../cleaning-subscription/enum/cleaning-subscription-frequency.enum";
 
 @Injectable()
 export class EmailService {
@@ -22,25 +23,6 @@ export class EmailService {
       "ADMIN_EMAIL_ADDRESS",
       "admin@glansandehem.se",
     );
-  }
-
-  async sendUserSigninMail(userEmail: string, userName: string = "User") {
-    try {
-      await this.mailerService.sendMail({
-        to: userEmail,
-        subject: "New signin detected",
-        template: "./signin",
-        context: {
-          companyName: this.companyName,
-          companyWebsite: this.staticWebsiteUrl,
-          userName: userName || "",
-          userEmail: userEmail || "",
-        },
-      });
-      this.logger.log("Email sent successfully to: " + userEmail);
-    } catch (error) {
-      this.logger.error("Failed to send email: " + error);
-    }
   }
 
   async sendUserSignupMail(userEmail: string, userName: string = "User") {
@@ -84,6 +66,31 @@ export class EmailService {
       );
     } catch (error) {
       this.logger.error("Failed to send Forget Password email: " + error);
+    }
+  }
+
+  async sendBookingConfirmedMail(
+    userEmail: string,
+    bookingDateTime: Date,
+    bookingFrequency: CleaningSubscriptionFrequencyEnum,
+  ) {
+    try {
+      const bookingDate = new Date(bookingDateTime);
+      await this.mailerService.sendMail({
+        to: userEmail,
+        subject: "Your Booking has been confirmed.",
+        template: "./booking-confirmed",
+        context: {
+          bookingDateTime:
+            bookingDate.toDateString() + " " + bookingDate.toTimeString(),
+          bookingFrequency: bookingFrequency,
+        },
+      });
+      this.logger.log(
+        "Booking served email sent successfully to: " + userEmail,
+      );
+    } catch (error) {
+      this.logger.error("Failed to send booking served email: " + error);
     }
   }
 
