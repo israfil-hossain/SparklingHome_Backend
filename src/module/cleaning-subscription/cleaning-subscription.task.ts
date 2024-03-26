@@ -119,18 +119,24 @@ export class CleaningSubscriptionTask {
           isActive: true,
         });
 
-        let cleaningDate = new Date(subscription.nextScheduleDate);
         const currentDate = new Date();
-        if (cleaningDate < currentDate) {
-          cleaningDate = new Date(
-            currentDate.getFullYear(),
-            currentDate.getMonth(),
-            currentDate.getDate() + 2,
-            cleaningDate.getHours(),
-            cleaningDate.getMinutes(),
-            cleaningDate.getSeconds(),
-            cleaningDate.getMilliseconds(),
-          );
+        let cleaningDate: Date = subscription.nextScheduleDate;
+        currentDate.setHours(
+          cleaningDate.getHours(),
+          cleaningDate.getMinutes(),
+          cleaningDate.getSeconds(),
+          cleaningDate.getMilliseconds(),
+        );
+
+        while (cleaningDate <= currentDate) {
+          const newCleaningDate =
+            this.cleaningSubscriptionService.getNextScheduleDate(
+              cleaningDate,
+              subscription.subscriptionFrequency,
+            );
+
+          if (!newCleaningDate) break;
+          cleaningDate = newCleaningDate;
         }
 
         const newBooking =
@@ -142,7 +148,7 @@ export class CleaningSubscriptionTask {
 
         const nextScheduleDate =
           this.cleaningSubscriptionService.getNextScheduleDate(
-            subscription.nextScheduleDate,
+            newBooking.cleaningDate,
             subscription.subscriptionFrequency,
           );
 

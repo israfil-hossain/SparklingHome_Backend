@@ -494,9 +494,8 @@ export class CleaningSubscriptionService {
     previousDate: Date,
     frequency: CleaningSubscriptionFrequencyEnum,
   ): Date | null {
-    const currentDate = new Date();
-
     const nextScheduleDate = new Date(previousDate);
+
     switch (frequency) {
       case CleaningSubscriptionFrequencyEnum.WEEKLY:
         nextScheduleDate.setDate(nextScheduleDate.getDate() + 7);
@@ -509,18 +508,6 @@ export class CleaningSubscriptionService {
         break;
       default:
         return null;
-    }
-
-    if (nextScheduleDate < currentDate) {
-      return new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        currentDate.getDate() + 2,
-        nextScheduleDate.getHours(),
-        nextScheduleDate.getMinutes(),
-        nextScheduleDate.getSeconds(),
-        nextScheduleDate.getMilliseconds(),
-      );
     }
 
     return nextScheduleDate;
