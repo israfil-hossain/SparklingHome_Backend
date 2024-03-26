@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import { FilterQuery, UpdateQuery } from "mongoose";
 import { ApplicationUserDocument } from "../application-user/entities/application-user.entity";
+import { ApplicationUserRoleEnum } from "../application-user/enum/application-user-role.enum";
 import { PaginatedResponseDto } from "../common/dto/paginated-response.dto";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { EmailService } from "../email/email.service";
@@ -25,11 +26,10 @@ export class CleaningBookingService {
     private readonly emailService: EmailService,
   ) {}
 
-  async getAllPaidBooking({
-    Page = 1,
-    PageSize = 10,
-    BookingUserId = "",
-  }: ListCleaningBookingQueryDto): Promise<PaginatedResponseDto> {
+  async getAllPaidBooking(
+    { Page = 1, PageSize = 10 }: ListCleaningBookingQueryDto,
+    { userId, userRole }: ITokenPayload,
+  ): Promise<PaginatedResponseDto> {
     try {
       // Search query setup
       const searchQuery: FilterQuery<CleaningBookingDocument> = {
@@ -37,8 +37,8 @@ export class CleaningBookingService {
         paymentStatus: CleaningBookingPaymentStatusEnum.PaymentCompleted,
       };
 
-      if (BookingUserId) {
-        searchQuery.bookingUser = BookingUserId;
+      if (userRole !== ApplicationUserRoleEnum.ADMIN) {
+        searchQuery.bookingUser = userId;
       }
 
       // Pagination setup

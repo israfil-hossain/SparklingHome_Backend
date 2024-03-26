@@ -31,9 +31,11 @@ export class CleaningBookingController {
     status: 200,
     type: SuccessResponseDto,
   })
-  @RequiredRoles([ApplicationUserRoleEnum.ADMIN])
-  getAllPaidBooking(@Query() queryDto: ListCleaningBookingQueryDto) {
-    return this.cleaningBookingService.getAllPaidBooking(queryDto);
+  getAllPaidBooking(
+    @AuthUserId() authUser: ITokenPayload,
+    @Query() queryDto: ListCleaningBookingQueryDto,
+  ) {
+    return this.cleaningBookingService.getAllPaidBooking(queryDto, authUser);
   }
 
   @Patch("UpdateById/:DocId")
