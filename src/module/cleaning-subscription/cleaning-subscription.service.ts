@@ -202,14 +202,10 @@ export class CleaningSubscriptionService {
       );
 
       this.emailService.sendNewSubscriptionMailToAdmin(
-        subscriptionUser.email,
-        subscriptionUser.fullName ?? "User",
-        newSubscription.id,
-        newSubscription.subscriptionFrequency.replace(
-          /([a-z])([A-Z])/g,
-          "$1 $2",
-        ),
         newSubscription.startDate,
+        subscriptionUser.fullName,
+        subscriptionUser.phoneNumber,
+        subscriptionUser.address,
       );
 
       const response = new IdNameResponseDto(newSubscription.id);

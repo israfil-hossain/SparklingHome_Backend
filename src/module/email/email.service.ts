@@ -265,24 +265,22 @@ export class EmailService {
   }
 
   async sendNewSubscriptionMailToAdmin(
-    userEmail: string,
-    userName: string,
-    subscriptionId: string,
-    subscriptionPlan: string,
     cleaningDate: Date,
+    userName: string = "User",
+    userPhone: string = "N/A",
+    userAddress: string = "N/A",
   ) {
     try {
       await this.mailerService.sendMail({
         to: this.adminEmailAddress,
-        subject: "New Subscription Notification",
+        subject: `You have a new booking request from ${userName || "New User"}`,
         template: "./new-subscription-admin",
         context: {
           userName: userName,
-          userEmail: userEmail,
-          subscriptionId: subscriptionId,
-          subscriptionPlan: subscriptionPlan,
-          subscriptionDate: new Date().toDateString(),
-          startDate: new Date(cleaningDate).toDateString(),
+          userAddress: userAddress,
+          userPhone: userPhone,
+          bookingDate: new Date(cleaningDate).toDateString(),
+          bookingTime: new Date(cleaningDate).toTimeString(),
         },
       });
       this.logger.log(

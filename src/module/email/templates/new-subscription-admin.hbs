@@ -3,35 +3,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>New Subscription Notification</title>
-    <style>
-      body { font-family: Arial, sans-serif; background-color: #f9f9f9; margin:
-      0; padding: 0; line-height: 1.6; color: #333; } .container { max-width:
-      600px; margin: 20px auto; padding: 20px; background-color: #fff;
-      border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); } h3 {
-      font-size: 24px; color: #333; margin-bottom: 20px; } p { font-size: 16px;
-      margin-bottom: 15px; } .link { color: #007bff; text-decoration: none; }
-      .link:hover { text-decoration: underline; }
-    </style>
   </head>
   <body>
-    <div class="container">
+    <div>
       <h3>New Subscription Notification</h3>
+    </div>
 
-      <p>Hello Admin,</p>
+    <div>
+      <h3>Client Information:</h3>
+      <p>Client: {{userName}}</p>
+      <p>Phone Number: {{userPhone}}</p>
+      <p>Address: {{userAddress}}</p>
+    </div>
 
-      <p>A new subscription has been made by the user
-        <strong>{{userName}}</strong>.</p>
-
-      <p><strong>User Email:</strong> {{userEmail}}</p>
-
-      <p><strong>Subscription Plan:</strong> {{subscriptionPlan}}</p>
-
-      <p><strong>Subscription ID:</strong> {{subscriptionId}}</p>
-
-      <p>Please take necessary actions to ensure the user's subscription is
-        properly managed.</p>
-
-      <p>Thank you.</p>
+    <div>
+      <h3>Booking Information:</h3>
+      <p>Booking date: {{bookingDate}}</p>
+      <p>Time: {{bookingTime}}</p>
     </div>
   </body>
 </html>
