@@ -68,11 +68,7 @@ export class EmailService {
     }
   }
 
-  async sendBookingConfirmedMail(
-    userEmail: string,
-    bookingDateTime: Date,
-    subscriptionFrequency: CleaningSubscriptionFrequencyEnum,
-  ) {
+  async sendBookingConfirmedMail(userEmail: string, bookingDateTime: Date) {
     try {
       const bookingDate = new Date(bookingDateTime);
       await this.mailerService.sendMail({
@@ -80,9 +76,8 @@ export class EmailService {
         subject: "Your Booking has been confirmed.",
         template: "./booking-confirmed",
         context: {
-          bookingDateTime:
-            bookingDate.toDateString() + " " + bookingDate.toTimeString(),
-          bookingFrequency: subscriptionFrequency,
+          bookingDate: bookingDate.toDateString(),
+          bookingTime: bookingDate.toTimeString(),
         },
       });
       this.logger.log(

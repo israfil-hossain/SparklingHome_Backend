@@ -132,22 +132,34 @@ export class CleaningBookingService {
 
       if (bookingUpdateDto.markAsServed) {
         if (
-          currentBooking.bookingStatus ===
-          CleaningBookingStatusEnum.BookingServed
+          currentBooking.bookingStatus !==
+          CleaningBookingStatusEnum.BookingInitiated
         )
-          throw new BadRequestException("Booking is already marked as served");
+          throw new BadRequestException(
+            "Booking status is not eligible for update",
+          );
 
         updateQuery.bookingStatus = CleaningBookingStatusEnum.BookingServed;
-        this.logger.log("Sending email to customer");
-        const bookingUser =
-          currentBooking.bookingUser as unknown as ApplicationUserDocument;
-        this.emailService.sendBookingServedMail(bookingUser.email);
       }
 
       const updatedBooking = await this.cleaningBookingRepository.updateOneById(
         currentBooking.id,
         updateQuery,
       );
+
+      const bookingUser =
+        currentBooking.bookingUser as unknown as ApplicationUserDocument;
+
+      if (bookingUpdateDto?.markAsServed) {
+        this.emailService.sendBookingServedMail(bookingUser.email);
+      }
+
+      if (bookingUpdateDto?.cleaningDate) {
+        this.emailService.sendBookingConfirmedMail(
+          bookingUser.email,
+          updatedBooking.cleaningDate,
+        );
+      }
 
       return new SuccessResponseDto(
         "Booking updated successfully",
