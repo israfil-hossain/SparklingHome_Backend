@@ -76,7 +76,6 @@ export class CreateCleaningSubscriptionDto {
 
   @ApiProperty({
     description: "Start date of the subscription",
-    example: "2024-03-01T00:00:00.000Z",
   })
   @IsNotEmpty({ message: "Start date is required" })
   @IsDate({ message: "Start date must be a valid date" })
