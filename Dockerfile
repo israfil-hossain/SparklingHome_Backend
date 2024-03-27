@@ -1,18 +1,26 @@
-# Build stage
+# Stage 1: Build stage
 FROM node:lts-alpine as builder
 WORKDIR /app
 COPY package.json ./
-RUN npm install
+RUN yarn install
 COPY . .
-RUN npm run build
+RUN yarn build
 
-# Run stage
-FROM node:lts-alpine as runner
-ENV NODE_ENV=production
+# Stage 2: Production dependencies stage
+FROM node:lts-alpine as dependencies
 WORKDIR /app
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/node_modules ./node_modules
-RUN npm prune --omit=dev
+COPY package.json ./
+RUN yarn install --production
+
+# Stage 3: Final runtime stage
+FROM node:lts-alpine as runner
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=dependencies /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package.json ./
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nodejs -u 1001
+USER nodejs
 EXPOSE 4000
-CMD ["npm", "run", "start:prod"]
+CMD ["yarn", "run", "start:prod"]
