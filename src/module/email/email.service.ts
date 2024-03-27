@@ -177,8 +177,8 @@ export class EmailService {
           companyName: this.companyName,
           companyWebsite: this.staticWebsiteUrl,
           userName: userName,
-          paymentAmount: paymentAmount.toFixed(2),
-          paymentDate: new DateTimeHelper().formatDateTime(),
+          paymentAmount: paymentAmount,
+          paymentDate: new DateTimeHelper(paymentDate).formatDateTime(),
           cleaningDate: new DateTimeHelper(cleaningDate).formatDateTime(),
         },
       });
