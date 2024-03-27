@@ -16,8 +16,7 @@ export class DateTimeHelper {
   ];
 
   constructor(date: Date = new Date()) {
-    this.date = new Date(date.toISOString());
-    this.date.setUTCHours(0, 0, 0, 0);
+    this.date = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
   }
 
   formatDate(): string {
