@@ -1,6 +1,7 @@
 import { MailerService } from "@nestjs-modules/mailer";
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { DateTimeHelper } from "../../utility/helper/date-time.helper";
 import { CleaningSubscriptionFrequencyEnum } from "../cleaning-subscription/enum/cleaning-subscription-frequency.enum";
 
 @Injectable()
@@ -70,14 +71,14 @@ export class EmailService {
 
   async sendBookingConfirmedMail(userEmail: string, bookingDateTime: Date) {
     try {
-      const bookingDate = new Date(bookingDateTime);
+      const bookingDate = new DateTimeHelper(bookingDateTime);
       await this.mailerService.sendMail({
         to: userEmail,
         subject: "Your Booking has been confirmed.",
         template: "./booking-confirmed",
         context: {
-          bookingDate: bookingDate.toDateString(),
-          bookingTime: bookingDate.toTimeString(),
+          bookingDate: bookingDate.formatDate(),
+          bookingTime: bookingDate.formatTime(),
         },
       });
       this.logger.log(
@@ -121,7 +122,7 @@ export class EmailService {
           companyName: this.companyName,
           companyWebsite: this.staticWebsiteUrl,
           userName: userName,
-          cleaningDate: new Date(cleaningDate).toDateString(),
+          cleaningDate: new DateTimeHelper(cleaningDate).formatDate(),
           cleaningDuration: cleaningDuration,
         },
       });
@@ -139,7 +140,7 @@ export class EmailService {
     subscriptionFrequency: CleaningSubscriptionFrequencyEnum,
   ) {
     try {
-      const cleaningDate = new Date(rescheduledCleaningDate);
+      const cleaningDate = new DateTimeHelper(rescheduledCleaningDate);
       await this.mailerService.sendMail({
         to: userEmail,
         subject:
@@ -147,8 +148,8 @@ export class EmailService {
         template: "./reschedule-notification",
         context: {
           subscriptionFrequency: subscriptionFrequency,
-          bookingDate: cleaningDate.toDateString(),
-          bookingTime: cleaningDate.toTimeString(),
+          bookingDate: cleaningDate.formatDate(),
+          bookingTime: cleaningDate.formatTime(),
           cancelLink: `${this.staticWebsiteUrl}/profile`,
         },
       });
@@ -164,6 +165,7 @@ export class EmailService {
     userEmail: string,
     userName: string = "User",
     cleaningDate: Date,
+    paymentDate: Date,
     paymentAmount: number,
   ) {
     try {
@@ -176,8 +178,8 @@ export class EmailService {
           companyWebsite: this.staticWebsiteUrl,
           userName: userName,
           paymentAmount: paymentAmount.toFixed(2),
-          paymentDate: new Date().toDateString(),
-          cleaningDate: new Date(cleaningDate).toDateString(),
+          paymentDate: new DateTimeHelper().formatDateTime(),
+          cleaningDate: new DateTimeHelper(cleaningDate).formatDateTime(),
         },
       });
       this.logger.log(
@@ -221,6 +223,7 @@ export class EmailService {
     userAddress: string = "N/A",
   ) {
     try {
+      const cleaningDateTime = new DateTimeHelper(cleaningDate);
       await this.mailerService.sendMail({
         to: this.adminEmailAddress,
         subject: `You have a new booking request from ${userName || "New User"}`,
@@ -229,8 +232,8 @@ export class EmailService {
           userName: userName,
           userAddress: userAddress,
           userPhone: userPhone,
-          bookingDate: new Date(cleaningDate).toDateString(),
-          bookingTime: new Date(cleaningDate).toTimeString(),
+          bookingDate: cleaningDateTime.formatDate(),
+          bookingTime: cleaningDateTime.formatTime(),
         },
       });
       this.logger.log(
@@ -257,7 +260,9 @@ export class EmailService {
           companyName: this.companyName,
           companyWebsite: this.staticWebsiteUrl,
           userName: userName,
-          nextCleaningDate: new Date(rescheduledCleaningDate).toDateString(),
+          nextCleaningDate: new DateTimeHelper(
+            rescheduledCleaningDate,
+          ).formatDateTime(),
         },
       });
       this.logger.log(

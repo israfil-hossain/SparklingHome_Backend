@@ -16,6 +16,9 @@ export class PaymentReceive extends BaseEntity {
   @Prop({ type: Number, default: 0 })
   totalPaid: number;
 
+  @Prop({ default: null })
+  paymentDate?: Date;
+
   @Prop({ type: String })
   paymentIntentId: string;
 

@@ -8,6 +8,7 @@ import {
 import { ConfigService } from "@nestjs/config";
 import axios, { AxiosInstance } from "axios";
 import { UpdateQuery } from "mongoose";
+import { DateTimeHelper } from "../../utility/helper/date-time.helper";
 import { ApplicationUserDocument } from "../application-user/entities/application-user.entity";
 import { CleaningBookingRepository } from "../cleaning-booking/cleaning-booking.repository";
 import { CleaningBookingDocument } from "../cleaning-booking/entities/cleaning-booking.entity";
@@ -181,7 +182,7 @@ export class PaymentReceiveService {
           items: [
             {
               reference: booking.id,
-              name: `Reservation for cleaning on ${new Date(booking.cleaningDate).toDateString()}`,
+              name: `Reservation for cleaning on ${new DateTimeHelper(booking.cleaningDate).formatDateTime()}`,
               quantity: 1,
               unit: "Reservation",
               unitPrice: booking.totalAmount * 100,
@@ -277,6 +278,7 @@ export class PaymentReceiveService {
 
     const paymentReceiveUpdate: UpdateQuery<PaymentReceiveDocument> = {
       lastPaymentEvent: JSON.stringify(data),
+      paymentDate: new Date(),
     };
 
     if (paymentStatus === CleaningBookingPaymentStatusEnum.PaymentCompleted) {
@@ -288,15 +290,6 @@ export class PaymentReceiveService {
 
       paymentReceiveUpdate.totalDue = totalDue.toFixed(2);
       paymentReceiveUpdate.totalPaid = totalPaid.toFixed(2);
-
-      const bookingUser =
-        booking.bookingUser as unknown as ApplicationUserDocument;
-      this.emailService.sendPaymentReceivedMail(
-        bookingUser.email,
-        bookingUser.fullName,
-        booking.cleaningDate,
-        totalPaid,
-      );
     }
 
     await this.paymentReceiveRepository.updateOneById(
@@ -308,6 +301,16 @@ export class PaymentReceiveService {
       bookingStatus: CleaningBookingStatusEnum.BookingCompleted,
       paymentStatus,
     });
+
+    const bookingUser =
+      booking.bookingUser as unknown as ApplicationUserDocument;
+    this.emailService.sendPaymentReceivedMail(
+      bookingUser.email,
+      bookingUser.fullName,
+      booking.cleaningDate,
+      paymentReceiveUpdate.paymentDate,
+      paymentReceiveUpdate.totalPaid,
+    );
   }
 
   private async storePaymentEventLog(event: string): Promise<void> {
