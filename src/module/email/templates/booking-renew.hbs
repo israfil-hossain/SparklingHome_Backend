@@ -1,31 +1,60 @@
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  </head>
-  <body>
-    <div>
-      <h3>Upcoming Booking Notification</h3>
-
-      <p>Dear {{userName}},</p>
-
-      <p>We hope this email finds you well.</p>
-
-      <p>We're excited to inform you that your upcoming cleaning service with
-        <strong>{{companyName}}</strong>
-        is just around the corner. Here are the details:</p>
-
-      <p>Service Date: {{cleaningDate}}</p>
-      <p>Service Duration: {{cleaningDuration}} hours</p>
-
-      <p>
-        <a href="{{companyWebsite}}/profile">View Booking Details</a>
-      </p>
-
-      <p>Glänsande Hem Städ<br />
-        Org. No. 890114-4751<br />
-        Holds F tax<br />
-        VAT reg. No. SE890114475101</p>
-    </div>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upcoming Cleaning Reminder - {{companyName}}</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      margin: 10px auto;
+      max-width: 600px;
+    }
+    h3 {
+      color: #333;
+      margin-bottom: 15px;
+    }
+    p {
+      margin: 5px 0;
+      line-height: 1.5;
+    }
+    a {
+      color: #3aa99e;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+   <header style="background-color: #fff; padding: 15px;">
+    <img src="https://res.cloudinary.com/diar6ua4t/image/upload/v1711527040/header_dwuawy.png" alt="Glänsande Hem Logo" width="100%" height="150px"  />  
+  </header>
+  <div class="container">
+    <h3>Upcoming Cleaning Reminder</h3>
+    <p>Dear {{userName}},</p>
+    <p>This is a friendly reminder that your next cleaning service with <strong>{{companyName}}</strong> is scheduled for <strong>{{cleaningDate}}</strong>.</p>
+    <p>The cleaning will take approximately <strong>{{cleaningDuration}} hours</strong>.</p>
+    <p>You can view and manage your booking details through our website: <a href="{{companyWebsite}}/profile">View Booking Details</a></p>
+    <p>We look forward to providing you with a sparkling clean home!</p>
+  </div>
+  <footer style="background-color: #eee; padding: 10px; text-align: center;">
+    <p>Glänsande Hem Städ<br />
+      Org. No. 890114-4751<br />
+      Holds F tax<br />
+      VAT reg. No. SE890114475101</p>
+    
+  <img src="https://res.cloudinary.com/diar6ua4t/image/upload/v1711527062/footer_tcoo6z.png" alt="Glänsande Hem Footer Logo" width="100%" height="100px"  />  
+  </footer>
+</body>
 </html>
