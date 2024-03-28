@@ -15,8 +15,8 @@ export class DateTimeHelper {
     "Dec",
   ];
 
-  constructor(date: Date = new Date()) {
-    this.date = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  constructor(date?: Date) {
+    this.date = new Date(date || Date.now());
   }
 
   formatDate(): string {
@@ -47,10 +47,10 @@ export class DateTimeHelper {
   }
 
   private getPaddedHours(): string {
-    return this.date.getUTCHours().toString().padStart(2, "0");
+    return this.date.getHours().toString().padStart(2, "0");
   }
 
   private getPaddedMinutes(): string {
-    return this.date.getUTCMinutes().toString().padStart(2, "0");
+    return this.date.getMinutes().toString().padStart(2, "0");
   }
 }
