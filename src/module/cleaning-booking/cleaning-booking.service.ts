@@ -7,6 +7,7 @@ import {
 import { FilterQuery, UpdateQuery } from "mongoose";
 import { ApplicationUserDocument } from "../application-user/entities/application-user.entity";
 import { ApplicationUserRoleEnum } from "../application-user/enum/application-user-role.enum";
+import { CleaningSubscriptionDocument } from "../cleaning-subscription/entities/cleaning-subscription.entity";
 import { PaginatedResponseDto } from "../common/dto/paginated-response.dto";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { EmailService } from "../email/email.service";
@@ -82,24 +83,10 @@ export class CleaningBookingService {
       if (Object.keys(bookingUpdateDto).length < 1)
         throw new BadRequestException("No fields to update");
 
-      const currentBooking = await this.cleaningBookingRepository.getOneWhere(
-        {
-          _id: bookingId,
-          isActive: true,
-          bookingStatus: {
-            $nin: [
-              CleaningBookingStatusEnum.BookingCancelled,
-              CleaningBookingStatusEnum.BookingCompleted,
-            ],
-          },
-          paymentStatus: {
-            $ne: CleaningBookingPaymentStatusEnum.PaymentCompleted,
-          },
-        },
-        {
-          populate: "bookingUser",
-        },
-      );
+      const currentBooking =
+        await this.cleaningBookingRepository.getActiveBookingWithSubscriptionById(
+          bookingId,
+        );
 
       if (!currentBooking)
         throw new BadRequestException(
@@ -143,21 +130,25 @@ export class CleaningBookingService {
       }
 
       const updatedBooking = await this.cleaningBookingRepository.updateOneById(
-        currentBooking.id,
+        currentBooking._id?.toString(),
         updateQuery,
       );
 
-      const bookingUser =
-        currentBooking.bookingUser as unknown as ApplicationUserDocument;
+      const subscription =
+        currentBooking.subscription as unknown as CleaningSubscriptionDocument;
 
-      if (bookingUpdateDto?.markAsServed) {
+      const bookingUser =
+        currentBooking?.bookingUser as unknown as ApplicationUserDocument;
+
+      if (bookingUser && bookingUpdateDto?.markAsServed) {
         this.emailService.sendBookingServedMail(bookingUser.email);
       }
 
-      if (bookingUpdateDto?.cleaningDate) {
+      if (subscription && bookingUpdateDto?.cleaningDate) {
         this.emailService.sendBookingConfirmedMail(
           bookingUser.email,
           updatedBooking.cleaningDate,
+          subscription.subscriptionFrequency,
         );
       }
 

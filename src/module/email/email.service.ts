@@ -69,16 +69,22 @@ export class EmailService {
     }
   }
 
-  async sendBookingConfirmedMail(userEmail: string, bookingDateTime: Date) {
+  async sendBookingConfirmedMail(
+    userEmail: string,
+    bookingDateTime: Date,
+    subscriptionFrequency: CleaningSubscriptionFrequencyEnum,
+  ) {
     try {
-      const bookingDate = new DateTimeHelper(bookingDateTime);
       await this.mailerService.sendMail({
         to: userEmail,
         subject: "Your Booking has been confirmed.",
         template: "./booking-confirmed",
         context: {
-          bookingDate: bookingDate.formatDate(),
-          bookingTime: bookingDate.formatTime(),
+          bookingDateTime: new DateTimeHelper(bookingDateTime).formatDateTime(),
+          bookingFrequency: subscriptionFrequency?.replace(
+            /([a-z])([A-Z])/g,
+            "$1 $2",
+          ),
         },
       });
       this.logger.log(
