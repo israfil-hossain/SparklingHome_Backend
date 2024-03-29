@@ -62,23 +62,43 @@ export class AuthenticationService {
 
   async signUp(signupDto: SignUpDto): Promise<SuccessResponseDto> {
     try {
+      let signupUser = await this.applicationUserRepository.getOneWhere({
+        email: signupDto.email,
+        role: ApplicationUserRoleEnum.USER,
+        isActive: false,
+      });
+
       signupDto.password = await this.encryptionService.hashPassword(
         signupDto.password,
       );
 
-      const newUser = await this.applicationUserRepository.create(signupDto);
+      if (signupUser) {
+        signupUser = await this.applicationUserRepository.updateOneById(
+          signupUser.id,
+          {
+            ...signupDto,
+            isActive: true,
+          },
+        );
+      } else {
+        signupUser = await this.applicationUserRepository.create(signupDto);
+      }
 
-      const accessToken = await this.generateAccessToken(newUser);
+      const accessToken = await this.generateAccessToken(signupUser);
 
       const refreshToken = await this.createRefreshToken(
-        newUser?.id?.toString(),
+        signupUser?.id?.toString(),
       );
 
-      const tokenDto = new TokenResponseDto(accessToken, refreshToken, newUser);
+      const tokenDto = new TokenResponseDto(
+        accessToken,
+        refreshToken,
+        signupUser,
+      );
 
       this.mailService.sendUserSignupMail(
-        newUser.email,
-        newUser.fullName ?? "",
+        signupUser.email,
+        signupUser.fullName ?? "",
       );
 
       return new SuccessResponseDto("User registered successfully", tokenDto);
