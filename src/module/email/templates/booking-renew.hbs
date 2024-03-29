@@ -1,60 +1,51 @@
-<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Upcoming Cleaning Reminder - {{companyName}}</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      background-color: #f5f5f5;
-    }
-    .container {
-      background-color: #fff;
-      padding: 20px;
-      border-radius: 5px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      margin: 10px auto;
-      max-width: 600px;
-    }
-    h3 {
-      color: #333;
-      margin-bottom: 15px;
-    }
-    p {
-      margin: 5px 0;
-      line-height: 1.5;
-    }
-    a {
-      color: #3aa99e;
-      text-decoration: none;
-    }
-    a:hover {
-      text-decoration: underline;
-    }
-  </style>
-</head>
-<body>
-   <header style="background-color: #fff; padding: 15px;">
-    <img src="https://res.cloudinary.com/diar6ua4t/image/upload/v1711527040/header_dwuawy.png" alt="Glänsande Hem Logo" width="100%" height="150px"  />  
-  </header>
-  <div class="container">
-    <h3>Upcoming Cleaning Reminder</h3>
-    <p>Dear {{userName}},</p>
-    <p>This is a friendly reminder that your next cleaning service with <strong>{{companyName}}</strong> is scheduled for <strong>{{cleaningDate}}</strong>.</p>
-    <p>The cleaning will take approximately <strong>{{cleaningDuration}} hours</strong>.</p>
-    <p>You can view and manage your booking details through our website: <a href="{{companyWebsite}}/profile">View Booking Details</a></p>
-    <p>We look forward to providing you with a sparkling clean home!</p>
-  </div>
-  <footer style="background-color: #eee; padding: 10px; text-align: center;">
-    <p>Glänsande Hem Städ<br />
-      Org. No. 890114-4751<br />
-      Holds F tax<br />
-      VAT reg. No. SE890114475101</p>
-    
-  <img src="https://res.cloudinary.com/diar6ua4t/image/upload/v1711527062/footer_tcoo6z.png" alt="Glänsande Hem Footer Logo" width="100%" height="100px"  />  
-  </footer>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upcoming Cleaning Reminder - {{companyName}}</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 0; padding: 20px;
+      background-color: #f5f5f5; } .container { background-color: #fff; padding:
+      20px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      margin: 10px auto; max-width: 600px; } h3 { color: #333; margin-bottom:
+      15px; } p { margin: 5px 0; line-height: 1.5; } a { color: #3aa99e;
+      text-decoration: none; } a:hover { text-decoration: underline; }
+    </style>
+  </head>
+  <body>
+    <header style="background-color: #fff; padding: 15px;">
+      <img
+        src="data:image/png;base64,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"
+        alt="Glänsande Hem Logo"
+        width="100%"
+        height="150px"
+      />
+    </header>
+    <div class="container">
+      <h3>Upcoming Cleaning Reminder</h3>
+      <p>Dear {{userName}},</p>
+      <p>This is a friendly reminder that your next cleaning service with
+        <strong>{{companyName}}</strong>
+        is scheduled for
+        <strong>{{cleaningDate}}</strong>.</p>
+      <p>The cleaning will take approximately
+        <strong>{{cleaningDuration}} hours</strong>.</p>
+      <p>You can view and manage your booking details through our website:
+        <a href="{{companyWebsite}}/profile">View Booking Details</a></p>
+      <p>We look forward to providing you with a sparkling clean home!</p>
+    </div>
+    <footer style="background-color: #eee; padding: 10px; text-align: center;">
+      <p>Glänsande Hem Städ<br />
+        Org. No. 890114-4751<br />
+        Holds F tax<br />
+        VAT reg. No. SE890114475101</p>
+
+      <img
+        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAy8AAABYAQMAAADGLFqXAAAAA1BMVEUCCjh2E7mgAAAAH0lEQVRo3u3BgQAAAADDoPtTH2EC1QAAAAAAAAAAgHQjaAABryRyzQAAAABJRU5ErkJggg=="
+        alt="Glänsande Hem Footer Logo"
+        width="100%"
+        height="100px"
+      />
+    </footer>
+  </body>
 </html>
