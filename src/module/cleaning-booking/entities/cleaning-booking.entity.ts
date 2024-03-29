@@ -24,6 +24,9 @@ export class CleaningBooking extends BaseEntity {
   })
   bookingUser: string;
 
+  @Prop({ type: Number, required: true, min: 1 })
+  subscriptionPrice: number;
+
   @Prop({
     type: Date,
     required: true,
