@@ -105,14 +105,16 @@ export class CleaningSubscriptionService {
       });
 
       if (subscriptionUser) {
-        if (!subscriptionUser.isActive) {
-          await this.applicationUserRepository.updateOneById(
-            subscriptionUser.id,
-            {
-              isActive: true,
-            },
-          );
-        }
+        await this.applicationUserRepository.updateOneById(
+          subscriptionUser.id,
+          {
+            fullName: createDto.userFullName,
+            phoneNumber: createDto.userPhoneNumber,
+            pidNumber: createDto.userPidNumber,
+            address: createDto.address,
+            isActive: true,
+          },
+        );
 
         const existingSubscription =
           await this.cleaningSubscriptionRepository.getOneWhere({
