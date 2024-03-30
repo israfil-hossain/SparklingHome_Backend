@@ -93,6 +93,14 @@ export class CleaningBookingService {
           "No active booking found with id: " + bookingId,
         );
 
+      if (
+        currentBooking.bookingStatus !==
+        CleaningBookingStatusEnum.BookingInitiated
+      )
+        throw new BadRequestException(
+          "Booking status is not eligible for update",
+        );
+
       const updateQuery: UpdateQuery<CleaningBookingDocument> = {
         updatedBy: authUserId,
         updatedAt: new Date(),
@@ -118,14 +126,6 @@ export class CleaningBookingService {
       }
 
       if (bookingUpdateDto.markAsServed) {
-        if (
-          currentBooking.bookingStatus !==
-          CleaningBookingStatusEnum.BookingInitiated
-        )
-          throw new BadRequestException(
-            "Booking status is not eligible for update",
-          );
-
         updateQuery.bookingStatus = CleaningBookingStatusEnum.BookingServed;
       }
 
