@@ -88,10 +88,10 @@ export class EmailService {
         },
       });
       this.logger.log(
-        "Booking served email sent successfully to: " + userEmail,
+        "Booking confirmed email sent successfully to: " + userEmail,
       );
     } catch (error) {
-      this.logger.error("Failed to send booking served email: " + error);
+      this.logger.error("Failed to send booking confirmed email: " + error);
     }
   }
 
