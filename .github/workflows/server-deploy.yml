@@ -1,23 +1,29 @@
-name: Remote SSH Command
+name: Deploy Application via SSH
 
 on:
   push:
     branches:
       - main
 
+env:
+  SERVER_HOST: ${{ secrets.SERVER_HOST }}
+  SERVER_USERNAME: ${{ secrets.SERVER_USERNAME }}
+  SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+
 jobs:
-  build:
+  deploy:
     name: Execute Remote SSH Command
     runs-on: ubuntu-latest
     steps:
-      - name: Execute SSH Command
+      - name: SSH into Server and Deploy Application
+        if: ${{ env.SERVER_HOST && env.SERVER_USERNAME && env.SERVER_PASSWORD }}
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USERNAME }}
-          password: ${{ secrets.SERVER_PASSWORD }}
+          host: $SERVER_HOST
+          username: $SERVER_USERNAME
+          password: $SERVER_PASSWORD
           script: |
             set -e
-            echo "Executing docker deploy command:"
+            echo "Executing deployment script:"
             cd /root/composes/application/backend/backend_code && git pull
-            cd /root/composes/application/backend && docker compose up -d --build
+            cd /root/composes/application/backend && docker-compose up -d --build
