@@ -7,7 +7,7 @@ import { CleaningSubscriptionFrequencyEnum } from "../cleaning-subscription/enum
 @Injectable()
 export class EmailService {
   private readonly logger: Logger = new Logger(EmailService.name);
-  private readonly companyName: string = "Glansandehem";
+  private readonly companyName: string = "Glänsande Hem";
   private readonly staticWebsiteUrl: string;
   private readonly adminEmailAddress: string;
 
@@ -102,7 +102,7 @@ export class EmailService {
         subject: "Completion of Cleaning Service and Payment Reminder",
         template: "./booking-served",
         context: {
-          profileLink: `${this.staticWebsiteUrl}/profile`,
+          websiteUrl: this.staticWebsiteUrl,
         },
       });
       this.logger.log(
