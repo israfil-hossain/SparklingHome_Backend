@@ -19,9 +19,9 @@ jobs:
         if: ${{ env.SERVER_HOST && env.SERVER_USERNAME && env.SERVER_PASSWORD }}
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: $SERVER_HOST
-          username: $SERVER_USERNAME
-          password: $SERVER_PASSWORD
+          host: ${{ env.SERVER_HOST }}
+          username: ${{ env.SERVER_USERNAME }}
+          password: ${{ env.SERVER_PASSWORD }}
           script: |
             set -e
             echo "Executing deployment script:"
