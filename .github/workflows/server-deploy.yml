@@ -26,4 +26,4 @@ jobs:
             set -e
             echo "Executing deployment script:"
             cd /root/composes/application/backend/backend_code && git pull
-            cd /root/composes/application/backend && docker-compose up -d --build
+            cd /root/composes/application/backend && docker compose up -d --build
