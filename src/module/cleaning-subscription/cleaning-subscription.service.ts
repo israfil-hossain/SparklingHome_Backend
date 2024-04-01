@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from "@nestjs/common";
-import { FilterQuery } from "mongoose";
+import { FilterQuery, UpdateQuery } from "mongoose";
 import { ApplicationUserRepository } from "../application-user/application-user.repository";
 import { ApplicationUserDocument } from "../application-user/entities/application-user.entity";
 import { ApplicationUserRoleEnum } from "../application-user/enum/application-user-role.enum";
@@ -241,43 +241,8 @@ export class CleaningSubscriptionService {
           "No active subscription found with id: " + subscriptionId,
         );
 
-      if (updateDto.nextScheduleDate) {
-        if (
-          subscription.subscriptionFrequency ===
-          CleaningSubscriptionFrequencyEnum.ONETIME
-        )
-          throw new BadRequestException(
-            "Cannot change next schedule date for onetime subscription",
-          );
-
-        if (
-          subscription.nextScheduleDate &&
-          new Date(subscription.nextScheduleDate).getTime() >=
-            new Date(updateDto.nextScheduleDate).getTime()
-        ) {
-          throw new BadRequestException(
-            "Next schedule date cannot be before or same as current schedule date",
-          );
-        }
-
-        const subscribedUser =
-          subscription.subscribedUser as unknown as ApplicationUserDocument;
-        this.emailService.sendRescheduleNotification(
-          subscribedUser.email,
-          subscribedUser.fullName ?? "User",
-          updateDto.nextScheduleDate,
-        );
-      }
-
-      const updateSubscription =
-        await this.cleaningSubscriptionRepository.updateOneById(
-          subscription.id,
-          {
-            ...updateDto,
-            updatedBy: userId,
-            updatedAt: new Date(),
-          },
-        );
+      const subscriptionUpdateQuery: UpdateQuery<CleaningSubscriptionDocument> =
+        { ...updateDto, updatedBy: userId, updatedAt: new Date() };
 
       if (updateDto.cleaningDurationInHours) {
         const currentBooking =
@@ -292,14 +257,14 @@ export class CleaningSubscriptionService {
           currentBooking.bookingStatus ===
             CleaningBookingStatusEnum.BookingInitiated &&
           currentBooking.cleaningDuration !==
-            updateSubscription.cleaningDurationInHours
+            subscription.cleaningDurationInHours
         ) {
           const cleaningCoupon =
             subscription.cleaningCoupon as unknown as CleaningCouponDocument;
 
           const newBooking = await this.createBookingFromSubscription(
-            updateSubscription,
-            updateSubscription.startDate,
+            subscription,
+            currentBooking.cleaningDate,
             cleaningCoupon,
           );
 
@@ -312,18 +277,17 @@ export class CleaningSubscriptionService {
             },
           );
 
-          await this.cleaningSubscriptionRepository.updateOneById(
-            subscription._id.toString(),
-            {
-              currentBooking: newBooking._id?.toString(),
-              updatedBy: userId,
-              updatedAt: new Date(),
-            },
-          );
+          subscriptionUpdateQuery.currentBooking = newBooking?._id?.toString();
         }
       }
 
-      const result = new IdNameResponseDto(subscription.id);
+      const updateSubscription =
+        await this.cleaningSubscriptionRepository.updateOneById(
+          subscription.id,
+          subscriptionUpdateQuery,
+        );
+
+      const result = new IdNameResponseDto(updateSubscription.id);
       return new SuccessResponseDto(
         "Subscription updated successfully",
         result,
@@ -333,6 +297,71 @@ export class CleaningSubscriptionService {
 
       this.logger.error("Error updating subscription:", error);
       throw new BadRequestException("Could not updated subscription");
+    }
+  }
+
+  async skipUpcomingSubscriptionBooking(
+    subscriptionId: string,
+    { userId, userRole }: ITokenPayload,
+  ): Promise<SuccessResponseDto> {
+    try {
+      const subscriptionQuery: FilterQuery<CleaningSubscriptionDocument> = {
+        _id: subscriptionId,
+        isActive: true,
+      };
+
+      if (userRole !== ApplicationUserRoleEnum.ADMIN) {
+        subscriptionQuery.subscribedUser = userId;
+      }
+
+      const subscription =
+        await this.cleaningSubscriptionRepository.getOneWhere(
+          subscriptionQuery,
+          { populate: ["subscribedUser"] },
+        );
+
+      if (
+        !subscription ||
+        !subscription.nextScheduleDate ||
+        subscription.subscriptionFrequency ===
+          CleaningSubscriptionFrequencyEnum.ONETIME
+      )
+        throw new BadRequestException(
+          "Update is not possible for this subscription",
+        );
+
+      const newNextScheduleDate = this.getNextScheduleDate(
+        subscription.nextScheduleDate,
+        subscription.subscriptionFrequency,
+      );
+
+      if (!newNextScheduleDate) {
+        throw new BadRequestException(
+          "Unable to determine next schedule date for this subscription",
+        );
+      }
+
+      await this.cleaningSubscriptionRepository.updateOneById(subscription.id, {
+        nextScheduleDate: newNextScheduleDate,
+        updatedBy: userId,
+        updatedAt: new Date(),
+      });
+
+      const subscribedUser =
+        subscription.subscribedUser as unknown as ApplicationUserDocument;
+
+      this.emailService.sendRescheduleNotification(
+        subscribedUser.email,
+        subscribedUser.fullName ?? "User",
+        newNextScheduleDate,
+      );
+
+      return new SuccessResponseDto("Next schedule date updated successfully");
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+
+      this.logger.error("Error updating subscription booking:", error);
+      throw new BadRequestException("Could not updated subscription booking");
     }
   }
 

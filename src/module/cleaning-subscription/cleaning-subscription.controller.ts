@@ -62,6 +62,21 @@ export class CleaningSubscriptionController {
     );
   }
 
+  @Patch("SkipUpcomingSubscriptionBookingById/:DocId")
+  @ApiResponse({
+    status: 200,
+    type: SuccessResponseDto,
+  })
+  skipUpcomingSubscriptionBookingById(
+    @AuthUserId() authUser: ITokenPayload,
+    @Param() { DocId }: DocIdQueryDto,
+  ) {
+    return this.cleaningSubscriptionService.skipUpcomingSubscriptionBooking(
+      DocId,
+      authUser,
+    );
+  }
+
   @Delete("CancelSubscriptionById/:DocId")
   @ApiResponse({
     status: 200,
