@@ -1,7 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { ApplicationUser } from "../application-user/entities/application-user.entity";
-import { CleaningSubscription } from "../cleaning-subscription/entities/cleaning-subscription.entity";
 import { GenericRepository } from "../common/repository/generic-repository";
 import {
   CleaningBooking,
@@ -10,11 +9,6 @@ import {
 } from "./entities/cleaning-booking.entity";
 import { CleaningBookingPaymentStatusEnum } from "./enum/cleaning-booking-payment-status.enum";
 import { CleaningBookingStatusEnum } from "./enum/cleaning-booking-status.enum";
-
-interface CleaningBookingDocumentWithSubscription
-  extends CleaningBookingDocument {
-  subscription?: CleaningSubscription;
-}
 
 @Injectable()
 export class CleaningBookingRepository extends GenericRepository<CleaningBookingDocument> {
@@ -27,91 +21,6 @@ export class CleaningBookingRepository extends GenericRepository<CleaningBooking
     const logger = new Logger(CleaningBookingRepository.name);
     super(model, logger);
     this.logger = logger;
-  }
-
-  async getActiveBookingWithSubscriptionById(
-    bookingId: string,
-  ): Promise<CleaningBookingDocumentWithSubscription | null> {
-    const modelAggregation = this.model
-      .aggregate()
-      .match({
-        $expr: {
-          $and: [
-            { $eq: ["$_id", { $toObjectId: bookingId }] },
-            { $eq: ["$isActive", true] },
-            {
-              $not: {
-                $in: [
-                  "$bookingStatus",
-                  [
-                    CleaningBookingStatusEnum.BookingCancelled,
-                    CleaningBookingStatusEnum.BookingCompleted,
-                  ],
-                ],
-              },
-            },
-            {
-              $ne: [
-                "$paymentStatus",
-                CleaningBookingPaymentStatusEnum.PaymentCompleted,
-              ],
-            },
-          ],
-        },
-      })
-      .lookup({
-        from: ApplicationUser.name.toLocaleLowerCase().concat("s"),
-        let: { bookingUserId: "$bookingUser" },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: ["$isActive", true] },
-                  {
-                    $eq: [{ $toString: "$_id" }, "$$bookingUserId"],
-                  },
-                ],
-              },
-            },
-          },
-          {
-            $project: {
-              email: 1,
-            },
-          },
-        ],
-        as: "bookingUser",
-      })
-      .unwind("$bookingUser")
-      .lookup({
-        from: CleaningSubscription.name.toLowerCase().concat("s"),
-        let: { bookingId: "$_id" },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: ["$isActive", true] },
-                  {
-                    $eq: [{ $toString: "$$bookingId" }, "$currentBooking"],
-                  },
-                ],
-              },
-            },
-          },
-          {
-            $project: {
-              subscriptionFrequency: 1,
-            },
-          },
-        ],
-        as: "subscription",
-      })
-      .unwind("$subscription");
-
-    const result = await modelAggregation.exec();
-    return result[0] || null;
   }
 
   async getTotalBookingEarnings(): Promise<number> {

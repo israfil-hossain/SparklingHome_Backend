@@ -340,23 +340,24 @@ export class CleaningSubscriptionService {
           "Current booking is not eligible for update",
         );
 
-      const updateQuery: UpdateQuery<CleaningBookingDocument> = {
+      const bookingUpdateQuery: UpdateQuery<CleaningBookingDocument> = {
         updatedBy: authUserId,
         updatedAt: new Date(),
       };
 
       if (bookingUpdateDto.cleaningDate) {
-        updateQuery.cleaningDate = bookingUpdateDto.cleaningDate;
+        bookingUpdateQuery.cleaningDate = bookingUpdateDto.cleaningDate;
       }
 
       if (bookingUpdateDto.remarks) {
-        updateQuery.remarks = bookingUpdateDto.remarks;
+        bookingUpdateQuery.remarks = bookingUpdateDto.remarks;
       }
 
       if (bookingUpdateDto.additionalCharges) {
-        updateQuery.additionalCharges = bookingUpdateDto.additionalCharges;
+        bookingUpdateQuery.additionalCharges =
+          bookingUpdateDto.additionalCharges;
 
-        updateQuery.totalAmount = Math.ceil(
+        bookingUpdateQuery.totalAmount = Math.ceil(
           currentBooking.cleaningPrice +
             bookingUpdateDto.additionalCharges +
             currentBooking.suppliesCharges -
@@ -364,13 +365,9 @@ export class CleaningSubscriptionService {
         );
       }
 
-      // if (bookingUpdateDto.markAsServed) {
-      //   updateQuery.bookingStatus = CleaningBookingStatusEnum.BookingServed;
-      // }
-
       const updatedBooking = await this.cleaningBookingRepository.updateOneById(
         currentBooking._id?.toString(),
-        updateQuery,
+        bookingUpdateQuery,
       );
 
       if (
@@ -392,11 +389,7 @@ export class CleaningSubscriptionService {
       }
 
       const bookingUser =
-        currentBooking?.bookingUser as unknown as ApplicationUserDocument;
-
-      // if (bookingUser && bookingUpdateDto?.markAsServed) {
-      //   this.emailService.sendBookingServedMail(bookingUser.email);
-      // }
+        subscription?.subscribedUser as unknown as ApplicationUserDocument;
 
       if (subscription && bookingUpdateDto?.cleaningDate) {
         this.emailService.sendBookingConfirmedMail(
