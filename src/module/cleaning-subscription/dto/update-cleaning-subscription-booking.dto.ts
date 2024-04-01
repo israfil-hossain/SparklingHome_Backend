@@ -1,6 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
 import {
-  IsBoolean,
   IsDate,
   IsNumber,
   IsOptional,
@@ -9,7 +8,7 @@ import {
   MinDate,
 } from "class-validator";
 
-export class UpdateCleaningBookingDto {
+export class UpdateCleaningSubscriptionBookingDto {
   @ApiProperty({
     required: false,
     description: "Date of the cleaning",
@@ -18,14 +17,6 @@ export class UpdateCleaningBookingDto {
   @IsDate({ message: "Cleaning date must be a valid date" })
   @MinDate(new Date(), { message: "Cleaning date must be in the future" })
   cleaningDate?: Date;
-
-  @ApiProperty({
-    required: false,
-    description: "Mark the booking as served",
-  })
-  @IsOptional()
-  @IsBoolean({ message: "Must be a boolean" })
-  markAsServed?: boolean;
 
   @ApiProperty({
     required: false,

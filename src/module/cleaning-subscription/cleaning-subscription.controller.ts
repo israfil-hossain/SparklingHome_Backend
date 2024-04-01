@@ -19,6 +19,7 @@ import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { CleaningSubscriptionService } from "./cleaning-subscription.service";
 import { CreateCleaningSubscriptionDto } from "./dto/create-cleaning-subscription.dto";
 import { ListCleaningSubscriptionQueryDto } from "./dto/list-cleaning-subscription-query.dto";
+import { UpdateCleaningSubscriptionBookingDto } from "./dto/update-cleaning-subscription-booking.dto";
 import { UpdateCleaningSubscriptionDto } from "./dto/update-cleaning-subscription.dto";
 
 @ApiTags("Cleaning Subscription")
@@ -59,6 +60,25 @@ export class CleaningSubscriptionController {
       DocId,
       updateDto,
       authUser,
+    );
+  }
+
+  @Patch("UpdateSubscriptionBookingById/:DocId")
+  @ApiBody({ type: UpdateCleaningSubscriptionBookingDto })
+  @ApiResponse({
+    status: 200,
+    type: SuccessResponseDto,
+  })
+  @RequiredRoles([ApplicationUserRoleEnum.ADMIN])
+  updateSubscriptionBooking(
+    @Param() { DocId: bookingId }: DocIdQueryDto,
+    @AuthUserId() { userId }: ITokenPayload,
+    @Body() updateDto: UpdateCleaningSubscriptionBookingDto,
+  ) {
+    return this.cleaningSubscriptionService.updateSubscriptionBooking(
+      bookingId,
+      updateDto,
+      userId,
     );
   }
 

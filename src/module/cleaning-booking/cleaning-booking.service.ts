@@ -4,16 +4,13 @@ import {
   Injectable,
   Logger,
 } from "@nestjs/common";
-import { FilterQuery, UpdateQuery } from "mongoose";
-import { ApplicationUserDocument } from "../application-user/entities/application-user.entity";
+import { FilterQuery } from "mongoose";
 import { ApplicationUserRoleEnum } from "../application-user/enum/application-user-role.enum";
-import { CleaningSubscriptionDocument } from "../cleaning-subscription/entities/cleaning-subscription.entity";
 import { PaginatedResponseDto } from "../common/dto/paginated-response.dto";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { EmailService } from "../email/email.service";
 import { CleaningBookingRepository } from "./cleaning-booking.repository";
 import { ListCleaningBookingQueryDto } from "./dto/list-cleaning-booking-query.dto";
-import { UpdateCleaningBookingDto } from "./dto/update-cleaning-booking.dto";
 import { CleaningBookingDocument } from "./entities/cleaning-booking.entity";
 import { CleaningBookingPaymentStatusEnum } from "./enum/cleaning-booking-payment-status.enum";
 import { CleaningBookingStatusEnum } from "./enum/cleaning-booking-status.enum";
@@ -71,96 +68,6 @@ export class CleaningBookingService {
 
       this.logger.error("Error finding users:", error);
       throw new BadRequestException("Could not get all users");
-    }
-  }
-
-  async updateBooking(
-    bookingId: string,
-    bookingUpdateDto: UpdateCleaningBookingDto,
-    authUserId: string,
-  ): Promise<SuccessResponseDto> {
-    try {
-      if (Object.keys(bookingUpdateDto).length < 1)
-        throw new BadRequestException("No fields to update");
-
-      const currentBooking =
-        await this.cleaningBookingRepository.getActiveBookingWithSubscriptionById(
-          bookingId,
-        );
-
-      if (!currentBooking)
-        throw new BadRequestException(
-          "No active booking found with id: " + bookingId,
-        );
-
-      if (
-        currentBooking.bookingStatus !==
-        CleaningBookingStatusEnum.BookingInitiated
-      )
-        throw new BadRequestException(
-          "Booking status is not eligible for update",
-        );
-
-      const updateQuery: UpdateQuery<CleaningBookingDocument> = {
-        updatedBy: authUserId,
-        updatedAt: new Date(),
-      };
-
-      if (bookingUpdateDto.cleaningDate) {
-        updateQuery.cleaningDate = bookingUpdateDto.cleaningDate;
-      }
-
-      if (bookingUpdateDto.remarks) {
-        updateQuery.remarks = bookingUpdateDto.remarks;
-      }
-
-      if (bookingUpdateDto.additionalCharges) {
-        updateQuery.additionalCharges = bookingUpdateDto.additionalCharges;
-
-        updateQuery.totalAmount = Math.ceil(
-          currentBooking.cleaningPrice +
-            bookingUpdateDto.additionalCharges +
-            currentBooking.suppliesCharges -
-            currentBooking.discountAmount,
-        );
-      }
-
-      if (bookingUpdateDto.markAsServed) {
-        updateQuery.bookingStatus = CleaningBookingStatusEnum.BookingServed;
-      }
-
-      const updatedBooking = await this.cleaningBookingRepository.updateOneById(
-        currentBooking._id?.toString(),
-        updateQuery,
-      );
-
-      const subscription =
-        currentBooking.subscription as unknown as CleaningSubscriptionDocument;
-
-      const bookingUser =
-        currentBooking?.bookingUser as unknown as ApplicationUserDocument;
-
-      if (bookingUser && bookingUpdateDto?.markAsServed) {
-        this.emailService.sendBookingServedMail(bookingUser.email);
-      }
-
-      if (subscription && bookingUpdateDto?.cleaningDate) {
-        this.emailService.sendBookingConfirmedMail(
-          bookingUser.email,
-          updatedBooking.cleaningDate,
-          subscription.subscriptionFrequency,
-        );
-      }
-
-      return new SuccessResponseDto(
-        "Booking updated successfully",
-        updatedBooking,
-      );
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-
-      this.logger.error("Error updating booking:", error);
-      throw new BadRequestException("Could not update booking");
     }
   }
 

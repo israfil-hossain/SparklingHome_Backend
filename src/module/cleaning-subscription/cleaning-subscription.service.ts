@@ -24,6 +24,7 @@ import { EncryptionService } from "../encryption/encryption.service";
 import { CleaningSubscriptionRepository } from "./cleaning-subscription.repository";
 import { CreateCleaningSubscriptionDto } from "./dto/create-cleaning-subscription.dto";
 import { ListCleaningSubscriptionQueryDto } from "./dto/list-cleaning-subscription-query.dto";
+import { UpdateCleaningSubscriptionBookingDto } from "./dto/update-cleaning-subscription-booking.dto";
 import { UpdateCleaningSubscriptionDto } from "./dto/update-cleaning-subscription.dto";
 import { CleaningSubscriptionDocument } from "./entities/cleaning-subscription.entity";
 import { CleaningSubscriptionFrequencyEnum } from "./enum/cleaning-subscription-frequency.enum";
@@ -219,6 +220,9 @@ export class CleaningSubscriptionService {
     { userId, userRole }: ITokenPayload,
   ): Promise<SuccessResponseDto> {
     try {
+      if (Object.keys(updateDto).length < 1)
+        throw new BadRequestException("No fields to update");
+
       const subscriptionQuery: FilterQuery<CleaningSubscriptionDocument> = {
         _id: subscriptionId,
         isActive: true,
@@ -281,22 +285,136 @@ export class CleaningSubscriptionService {
         }
       }
 
-      const updateSubscription =
+      const updatedSubscription =
         await this.cleaningSubscriptionRepository.updateOneById(
           subscription.id,
           subscriptionUpdateQuery,
         );
 
-      const result = new IdNameResponseDto(updateSubscription.id);
       return new SuccessResponseDto(
         "Subscription updated successfully",
-        result,
+        updatedSubscription,
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;
 
       this.logger.error("Error updating subscription:", error);
       throw new BadRequestException("Could not updated subscription");
+    }
+  }
+
+  async updateSubscriptionBooking(
+    subscriptionId: string,
+    bookingUpdateDto: UpdateCleaningSubscriptionBookingDto,
+    authUserId: string,
+  ): Promise<SuccessResponseDto> {
+    try {
+      if (Object.keys(bookingUpdateDto).length < 1)
+        throw new BadRequestException("No fields to update");
+
+      const subscription =
+        await this.cleaningSubscriptionRepository.getOneWhere(
+          {
+            _id: subscriptionId,
+            isActive: true,
+          },
+          {
+            populate: ["currentBooking", "subscribedUser"],
+          },
+        );
+
+      if (!subscription || !subscription.currentBooking) {
+        throw new BadRequestException(
+          "No valid subscription found with id: " + subscriptionId,
+        );
+      }
+
+      const currentBooking =
+        subscription?.currentBooking as unknown as CleaningBookingDocument;
+
+      if (
+        currentBooking.bookingStatus !==
+        CleaningBookingStatusEnum.BookingInitiated
+      )
+        throw new BadRequestException(
+          "Current booking is not eligible for update",
+        );
+
+      const updateQuery: UpdateQuery<CleaningBookingDocument> = {
+        updatedBy: authUserId,
+        updatedAt: new Date(),
+      };
+
+      if (bookingUpdateDto.cleaningDate) {
+        updateQuery.cleaningDate = bookingUpdateDto.cleaningDate;
+      }
+
+      if (bookingUpdateDto.remarks) {
+        updateQuery.remarks = bookingUpdateDto.remarks;
+      }
+
+      if (bookingUpdateDto.additionalCharges) {
+        updateQuery.additionalCharges = bookingUpdateDto.additionalCharges;
+
+        updateQuery.totalAmount = Math.ceil(
+          currentBooking.cleaningPrice +
+            bookingUpdateDto.additionalCharges +
+            currentBooking.suppliesCharges -
+            currentBooking.discountAmount,
+        );
+      }
+
+      // if (bookingUpdateDto.markAsServed) {
+      //   updateQuery.bookingStatus = CleaningBookingStatusEnum.BookingServed;
+      // }
+
+      const updatedBooking = await this.cleaningBookingRepository.updateOneById(
+        currentBooking._id?.toString(),
+        updateQuery,
+      );
+
+      if (
+        bookingUpdateDto.cleaningDate &&
+        subscription.subscriptionFrequency !==
+          CleaningSubscriptionFrequencyEnum.ONETIME
+      ) {
+        const nextScheduleDate = this.getNextScheduleDate(
+          updatedBooking.cleaningDate,
+          subscription.subscriptionFrequency,
+        );
+
+        await this.cleaningSubscriptionRepository.updateOneById(
+          subscription.id,
+          {
+            nextScheduleDate: nextScheduleDate,
+          },
+        );
+      }
+
+      const bookingUser =
+        currentBooking?.bookingUser as unknown as ApplicationUserDocument;
+
+      // if (bookingUser && bookingUpdateDto?.markAsServed) {
+      //   this.emailService.sendBookingServedMail(bookingUser.email);
+      // }
+
+      if (subscription && bookingUpdateDto?.cleaningDate) {
+        this.emailService.sendBookingConfirmedMail(
+          bookingUser.email,
+          updatedBooking.cleaningDate,
+          subscription.subscriptionFrequency,
+        );
+      }
+
+      return new SuccessResponseDto(
+        "Subscription booking updated successfully",
+        updatedBooking,
+      );
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+
+      this.logger.error("Error updating booking:", error);
+      throw new BadRequestException("Could not update booking");
     }
   }
 
