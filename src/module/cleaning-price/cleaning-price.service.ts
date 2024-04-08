@@ -75,7 +75,7 @@ export class CleaningPriceService {
       });
 
       if (!result) {
-        this.logger.error(`Document not found with ID: ${id}`);
+        this.logger.error(`Document not found with ID: ${id}`, id);
         throw new NotFoundException(`Could not find document with ID: ${id}`);
       }
 
@@ -105,7 +105,7 @@ export class CleaningPriceService {
       );
 
       if (!result) {
-        this.logger.error(`Document not found with ID: ${id}`);
+        this.logger.error(`Document not found with ID: ${id}`, id);
         throw new NotFoundException(`Could not find document with ID: ${id}`);
       }
 

@@ -84,7 +84,7 @@ export class CleaningCouponService {
       });
 
       if (!result) {
-        this.logger.error(`Document not found with ID: ${id}`);
+        this.logger.error(`Document not found with ID: ${id}`, id);
         throw new NotFoundException(`Could not find document with ID: ${id}`);
       }
 
@@ -114,7 +114,7 @@ export class CleaningCouponService {
       );
 
       if (!result) {
-        this.logger.error(`Document not found with ID: ${id}`);
+        this.logger.error(`Document not found with ID: ${id}`, id);
         throw new NotFoundException(`Could not find document with ID: ${id}`);
       }
 
@@ -132,7 +132,7 @@ export class CleaningCouponService {
       const result = await this.cleaningCouponRepository.removeOneById(id);
 
       if (!result) {
-        this.logger.error(`Document not found with ID: ${id}`);
+        this.logger.error(`Document not found with ID: ${id}`, id);
         throw new BadRequestException(
           `Could not delete document with ID: ${id}`,
         );

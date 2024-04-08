@@ -90,7 +90,7 @@ export class ApplicationUserService {
       const user = await this.applicationUserRepository.getOneById(id);
 
       if (!user) {
-        this.logger.error(`User Document not found with ID: ${id}`);
+        this.logger.error(`User Document not found with ID: ${id}`, id);
         throw new NotFoundException(`Could not find user with ID: ${id}`);
       }
 
@@ -123,7 +123,7 @@ export class ApplicationUserService {
     try {
       const result = await this.applicationUserRepository.removeOneById(id);
       if (!result) {
-        this.logger.error(`User Document not delete with ID: ${id}`);
+        this.logger.error(`User Document not delete with ID: ${id}`, id);
         throw new BadRequestException(`Could not delete user with ID: ${id}`);
       }
 
@@ -144,7 +144,7 @@ export class ApplicationUserService {
       const user = await this.applicationUserRepository.getOneById(userId);
 
       if (!user) {
-        this.logger.error(`User Document not found with ID: ${userId}`);
+        this.logger.error(`User Document not found with ID: ${userId}`, userId);
         throw new NotFoundException(`Could not find user with ID: ${userId}`);
       }
 

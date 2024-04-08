@@ -166,6 +166,7 @@ export class PaymentReceiveService {
     if (!booking) {
       this.logger.error(
         `Booking with ID ${bookingId} was not found or not eligible for payment.`,
+        bookingId,
       );
       throw new NotFoundException(
         `Booking with ID ${bookingId} not found or not eligible for payment.`,
