@@ -118,9 +118,7 @@ export class ImageMetaService {
           result: UploadApiResponse | undefined,
         ) => {
           if (error) {
-            this.logger.error(
-              `Failed to upload image to Cloudinary: ${error.message}`,
-            );
+            this.logger.error(`Failed to upload image to Cloudinary`, error);
             reject(error);
           } else if (!result) {
             const errorMessage = "Upload result is undefined";
@@ -146,7 +144,8 @@ export class ImageMetaService {
       return await CloudinaryAPI.uploader.destroy(publicId);
     } catch (error) {
       this.logger.error(
-        `Failed to delete image from Cloudinary with public ID: ${publicId}: ${error.message}`,
+        `Failed to delete image from Cloudinary with public ID: ${publicId}`,
+        error,
       );
       throw error;
     }

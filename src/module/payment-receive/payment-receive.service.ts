@@ -91,7 +91,12 @@ export class PaymentReceiveService {
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      this.logger.error(error?.response?.data);
+      if (error?.response?.data) {
+        this.logger.error(
+          "Error in getPaymentIntent HTTP Response:",
+          error?.response?.data,
+        );
+      }
 
       this.logger.error("Error in getPaymentIntent:", error);
       throw new BadRequestException("Failed to get payment intent");
@@ -217,10 +222,14 @@ export class PaymentReceiveService {
 
       return data;
     } catch (error) {
-      this.logger.error(
-        "Error in create payment request:",
-        error?.response?.data,
-      );
+      if (error?.response?.data) {
+        this.logger.error(
+          "Error in createPaymentIntent HTTP Response:",
+          error?.response?.data,
+        );
+      }
+
+      this.logger.error("Error in createPaymentIntent:", error);
       throw error;
     }
   }
@@ -257,7 +266,7 @@ export class PaymentReceiveService {
     });
 
     if (!paymentReceive) {
-      this.logger.error("Invalid payment receive");
+      this.logger.error("Invalid payment receive", data);
       throw new BadRequestException("Invalid payment receive");
     }
 
@@ -272,7 +281,7 @@ export class PaymentReceiveService {
     );
 
     if (!booking) {
-      this.logger.error("Invalid booking for payment receive");
+      this.logger.error("Invalid booking for payment receive", paymentReceive);
       throw new BadRequestException("Invalid booking for payment receive");
     }
 

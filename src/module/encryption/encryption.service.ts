@@ -27,7 +27,7 @@ export class EncryptionService {
 
   async hashPassword(rawPassword: string): Promise<string> {
     if (!rawPassword) {
-      this.logger.error("Password is required");
+      this.logger.error("Password is required", rawPassword);
       throw new BadRequestException("Password is required");
     }
 
@@ -39,7 +39,7 @@ export class EncryptionService {
     hashedPassword: string = "",
   ): Promise<boolean> {
     if (!rawPassword) {
-      this.logger.error("Password is required");
+      this.logger.error("Password is required", rawPassword);
       throw new BadRequestException("Password is required");
     }
 

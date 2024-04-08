@@ -5,6 +5,7 @@ import {
   Injectable,
   Logger,
   Provider,
+  UnauthorizedException,
 } from "@nestjs/common";
 import { APP_GUARD, Reflector } from "@nestjs/core";
 import { Observable } from "rxjs";
@@ -30,14 +31,19 @@ export class ApplicationUserRolesGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
-    const user: ITokenPayload = request.user;
+    const user: ITokenPayload = request?.user;
+    if (!user) {
+      throw new UnauthorizedException(
+        "User is not authorized to perform this action",
+      );
+    }
 
     if (
-      !user ||
       !roles.some((role: ApplicationUserRoleEnum) => user.userRole === role)
     ) {
       this.logger.error(
         `User does not have required roles: ${roles.join(", ")}`,
+        user,
       );
       throw new ForbiddenException(
         "User is not authorized to perform this action",

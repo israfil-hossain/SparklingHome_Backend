@@ -53,21 +53,12 @@ class AuthenticationGuard implements CanActivate {
       );
 
       if (!tokenPayload.userId || !tokenPayload.userRole) {
-        this.logger.error(`Invalid payload found in token: ${token}`);
-        throw new UnauthorizedException(
-          "User is not authorized to perform this action",
-        );
+        throw new Error(token);
       }
 
       request["user"] = tokenPayload;
     } catch (error) {
-      if (error instanceof UnauthorizedException) {
-        throw error;
-      }
-
-      this.logger.error(
-        `User is not authorized to perform this action with token: ${token}`,
-      );
+      this.logger.error("Invalid payload found in token", error);
       throw new UnauthorizedException(
         "User is not authorized to perform this action",
       );

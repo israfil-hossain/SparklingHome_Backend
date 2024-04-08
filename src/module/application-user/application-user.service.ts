@@ -41,7 +41,7 @@ export class ApplicationUserService {
     } catch (error) {
       if (error instanceof HttpException) throw error;
 
-      this.logger.error("Error creating new document:", error.description);
+      this.logger.error("Error creating new document:", error);
       throw new BadRequestException("Error creating new document");
     }
   }
@@ -114,7 +114,7 @@ export class ApplicationUserService {
     } catch (error) {
       if (error instanceof HttpException) throw error;
 
-      this.logger.error("Error updating new document:", error.description);
+      this.logger.error("Error updating new document:", error);
       throw new BadRequestException("Error updating new document");
     }
   }
@@ -168,7 +168,7 @@ export class ApplicationUserService {
     } catch (error) {
       if (error instanceof HttpException) throw error;
 
-      this.logger.error("Error updating new document:", error.description);
+      this.logger.error("Error updating new document:", error);
       throw new BadRequestException("Error updating new document");
     }
   }

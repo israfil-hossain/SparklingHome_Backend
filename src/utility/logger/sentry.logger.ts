@@ -18,9 +18,9 @@ export class SentryLogger extends ConsoleLogger {
       : errorMessage;
 
     Sentry.withScope((scope) => {
+      scope.setExtra("message", errorMessage);
       scope.setExtra("stack", stack);
       scope.setExtra("context", logContext);
-      scope.setExtra("message", errorMessage);
       Sentry.captureMessage(formattedMessage, "error");
     });
 

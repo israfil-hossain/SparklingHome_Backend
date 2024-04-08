@@ -38,7 +38,7 @@ export class EmailService {
       });
       this.logger.log("Email sent successfully to: " + userEmail);
     } catch (error) {
-      this.logger.error("Failed to send email: " + error);
+      this.logger.error("Failed to send welcome email: ", error);
     }
   }
 
@@ -65,7 +65,7 @@ export class EmailService {
         "Forget Password email sent successfully to: " + userEmail,
       );
     } catch (error) {
-      this.logger.error("Failed to send Forget Password email: " + error);
+      this.logger.error("Failed to send Forget Password email: ", error);
     }
   }
 
@@ -91,7 +91,7 @@ export class EmailService {
         "Booking confirmed email sent successfully to: " + userEmail,
       );
     } catch (error) {
-      this.logger.error("Failed to send booking confirmed email: " + error);
+      this.logger.error("Failed to send booking confirmed email: ", error);
     }
   }
 
@@ -109,7 +109,7 @@ export class EmailService {
         "Booking served email sent successfully to: " + userEmail,
       );
     } catch (error) {
-      this.logger.error("Failed to send booking served email: " + error);
+      this.logger.error("Failed to send booking served email: ", error);
     }
   }
 
@@ -136,7 +136,7 @@ export class EmailService {
         "Booking renewed email sent successfully to: " + userEmail,
       );
     } catch (error) {
-      this.logger.error("Failed to send booking renewed email: " + error);
+      this.logger.error("Failed to send booking renewed email: ", error);
     }
   }
 
@@ -166,7 +166,7 @@ export class EmailService {
         "Booking renewed email sent successfully to: " + userEmail,
       );
     } catch (error) {
-      this.logger.error("Failed to send booking renewed email: " + error);
+      this.logger.error("Failed to send booking renewed email: ", error);
     }
   }
 
@@ -195,7 +195,7 @@ export class EmailService {
         `Payment received email sent successfully to: ${userEmail}`,
       );
     } catch (error) {
-      this.logger.error("Failed to send payment received email: " + error);
+      this.logger.error("Failed to send payment received email: ", error);
     }
   }
 
@@ -220,7 +220,8 @@ export class EmailService {
       );
     } catch (error) {
       this.logger.error(
-        "Failed to send new cleaning subscription confirmation email: " + error,
+        "Failed to send new cleaning subscription confirmation email: ",
+        error,
       );
     }
   }
@@ -250,7 +251,8 @@ export class EmailService {
       );
     } catch (error) {
       this.logger.error(
-        "Failed to send new subscription notification to admin: " + error,
+        "Failed to send new subscription notification to admin: ",
+        error,
       );
     }
   }
@@ -279,7 +281,8 @@ export class EmailService {
       );
     } catch (error) {
       this.logger.error(
-        "Failed to send reschedule notification email: " + error,
+        "Failed to send reschedule notification email: ",
+        error,
       );
     }
   }

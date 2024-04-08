@@ -14,7 +14,7 @@ export const AuthUserId = createParamDecorator(
     const tokenUser: ITokenPayload = request?.user;
 
     if (!tokenUser || !ObjectId.isValid(tokenUser?.userId)) {
-      logger.error("Invalid user ID of logged-in user");
+      logger.error("Invalid user ID of logged-in user", tokenUser);
       throw new UnauthorizedException("Invalid user ID of logged-in user");
     }
 
