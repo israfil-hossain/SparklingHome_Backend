@@ -153,10 +153,13 @@ export class EmailService {
           "Soft reminder! Upcoming cleaning services have been initially confirmed",
         template: "./reschedule-notification",
         context: {
-          subscriptionFrequency: subscriptionFrequency,
+          cancelLink: `${this.staticWebsiteUrl}/profile`,
           bookingDate: cleaningDate.formatDate(),
           bookingTime: cleaningDate.formatTime(),
-          cancelLink: `${this.staticWebsiteUrl}/profile`,
+          subscriptionFrequency: subscriptionFrequency?.replace(
+            /([a-z])([A-Z])/g,
+            "$1 $2",
+          ),
         },
       });
       this.logger.log(

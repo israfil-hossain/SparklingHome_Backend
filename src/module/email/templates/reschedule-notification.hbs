@@ -16,22 +16,30 @@
     </div>
 
     <div>
-      <h3>Next Schedule Date Update</h3>
+      <p>We would like to inform you that your Subscription about
+        <strong>{{subscriptionFrequency}}</strong>
+        and the Upcoming Booking Date is:
+        <strong>{{bookingDate}}</strong>
+        & Time
+        <strong>{{bookingTime}}</strong>
+        is initially confirmed.</p>
 
-      <p>Dear {{userName}},</p>
+      <div style="text-align: center;">
+        <p>If you wish to cancel this booking, please visit your
+          <a href="{{cancelLink}}">profile page</a>
+          and follow the cancellation process.</p>
+        <a
+          href="{{cancelLink}}"
+          style="display: inline-block; padding: 10px 20px; background-color: #dc3545; color: #fff; text-decoration: none; margin-top: 10px;"
+        >Cancel Booking</a>
+      </div>
 
-      <p>We wanted to inform you about an update regarding your next cleaning
-        schedule with
-        <strong>{{companyName}}</strong>.</p>
+      <p><strong>Note:</strong>
+        If you want to reschedule your booking date, you can call 0761525840 or
+        email us at support@glansandehem.se.</p>
 
-      <p>Your next cleaning session is now scheduled for:
-        <strong>{{nextCleaningDate}}</strong>.</p>
-
-      <p>Glänsande Hem Städ<br />
-        Org. No. 890114-4751<br />
-        Holds F tax<br />
-        VAT reg. No. SE890114475101</p>
     </div>
+
     <footer style="background-color: #eee; padding: 10px; text-align: center;">
       <p>Glänsande Hem Städ<br />
         Org. No. 890114-4751<br />
