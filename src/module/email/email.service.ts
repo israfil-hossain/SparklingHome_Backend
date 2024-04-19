@@ -116,20 +116,25 @@ export class EmailService {
   async sendBookingRenewedMail(
     userEmail: string,
     userName: string = "User",
-    cleaningDate: Date,
-    cleaningDuration: number,
+    upcomingDate: Date,
+    subscriptionFrequency: CleaningSubscriptionFrequencyEnum,
   ) {
     try {
+      const cleaningDate = new DateTimeHelper(upcomingDate);
+
       await this.mailerService.sendMail({
         to: userEmail,
-        subject: "Upcoming Booking Notification",
+        subject: "Important Notice: Your Upcoming Cleaning Booking",
         template: "./booking-renew",
         context: {
-          companyName: this.companyName,
-          companyWebsite: this.staticWebsiteUrl,
           userName: userName,
-          cleaningDate: new DateTimeHelper(cleaningDate).formatDate(),
-          cleaningDuration: cleaningDuration,
+          cancelLink: `${this.staticWebsiteUrl}/profile`,
+          bookingDate: cleaningDate.formatDate(),
+          bookingTime: cleaningDate.formatTime(),
+          subscriptionFrequency: subscriptionFrequency?.replace(
+            /([a-z])([A-Z])/g,
+            "$1 $2",
+          ),
         },
       });
       this.logger.log(
@@ -142,17 +147,20 @@ export class EmailService {
 
   async sendUpcomingBookingReminderMail(
     userEmail: string,
+    userName: string = "User",
     upcomingDate: Date,
     subscriptionFrequency: CleaningSubscriptionFrequencyEnum,
   ) {
     try {
       const cleaningDate = new DateTimeHelper(upcomingDate);
+
       await this.mailerService.sendMail({
         to: userEmail,
         subject:
           "Soft reminder! Upcoming cleaning services have been initially confirmed",
         template: "./upcoming-booking",
         context: {
+          userName: userName,
           cancelLink: `${this.staticWebsiteUrl}/profile`,
           bookingDate: cleaningDate.formatDate(),
           bookingTime: cleaningDate.formatTime(),
@@ -257,7 +265,7 @@ export class EmailService {
     }
   }
 
-  async sendRescheduleNotification(
+  async sendRescheduleOfNextBookingNotification(
     userEmail: string,
     userName: string,
     rescheduledCleaningDate: Date,
@@ -266,7 +274,7 @@ export class EmailService {
       await this.mailerService.sendMail({
         to: userEmail,
         subject: "Cleaning Schedule Update",
-        template: "./reschedule-notification",
+        template: "./reschedule-next-booking",
         context: {
           companyName: this.companyName,
           companyWebsite: this.staticWebsiteUrl,

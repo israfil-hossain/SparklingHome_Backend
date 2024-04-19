@@ -461,7 +461,7 @@ export class CleaningSubscriptionService {
       const subscribedUser =
         subscription.subscribedUser as unknown as ApplicationUserDocument;
 
-      this.emailService.sendRescheduleNotification(
+      this.emailService.sendRescheduleOfNextBookingNotification(
         subscribedUser.email,
         subscribedUser.fullName ?? "User",
         newNextScheduleDate,

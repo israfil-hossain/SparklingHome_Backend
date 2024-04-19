@@ -2,7 +2,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Subscription Confirmation - Glänsande Hem</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 0; padding: 20px;
+      background-color: #f5f5f5; } h3 { color: #333; margin-bottom: 15px; } p {
+      margin: 5px 0; line-height: 1.5; } a { color: #3aa99e; text-decoration:
+      none; } a:hover { text-decoration: underline; }
+    </style>
   </head>
   <body>
 
@@ -15,34 +20,46 @@
         height="100%"
       />
     </div>
-    <p>We would like to inform you that your Subscription about
-      {{subscriptionFrequency}}
-      and the upcoming Booking Date is:
-      {{bookingDate}}
-      & Time
-      {{bookingTime}}
-      is initially confirmed.</p>
+    <div class="container">
+      <h3>Upcoming Cleaning Reminder</h3>
+      <p>Dear {{userName}},</p>
+      <p>We would like to inform you that your Subscription about
+        <strong>
+          {{subscriptionFrequency}}
+        </strong>
+        and the upcoming Booking Date
+        <strong>
+          {{bookingDate}}
+        </strong>
+        & Time
+        <strong>
+          {{bookingTime}}
+        </strong>
+        is initially confirmed.</p>
 
-    <p>In case you are unable to take this booking, you can click on the
-      <a href="{{cancelLink}}">CANCEL</a>
-      button.</p>
+      <p>If you wish to cancel this booking, please visit your
+        <a href="{{cancelLink}}">profile page</a>
+        and follow the cancellation process.</p>
+      <div style="text-align: center;">
+        <a
+          href="{{cancelLink}}"
+          style="display: inline-block; padding: 10px 20px; background-color: #dc3545; color: #fff; text-decoration: none; margin-top: 10px;"
+        >Cancel Booking</a>
+      </div>
 
-    <p><strong>Note:</strong>
-      If you want to reschedule or rebook this subscription, please contact us
-      via email or phone call directly.</p>
-
-    <p><strong>Note:</strong>
-      If you want to reschedule your booking date, you can call
-      <a href="tel:0761525840">0761525840</a>
-      or email us at
-      <a href="mailto:support@glansandehem.se">support@glansandehem.se</a>.</p>
-
+      <p><strong>Note:</strong>
+        If you want to reschedule your booking date, you can call
+        <a href="tel:0761525840">0761525840</a>
+        or email us at
+        <a
+          href="mailto:support@glansandehem.se"
+        >support@glansandehem.se</a>.</p>
+    </div>
     <footer style="background-color: #eee; padding: 10px; text-align: center;">
       <p>Glänsande Hem Städ<br />
         Org. No. 890114-4751<br />
         Holds F tax<br />
-        VAT reg. No. SE890114475101
-      </p>
+        VAT reg. No. SE890114475101</p>
     </footer>
 
     <div style="background-color: #020a38; width: 100%; height: 100px;"></div>

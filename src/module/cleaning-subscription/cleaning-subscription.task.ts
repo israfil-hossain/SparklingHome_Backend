@@ -3,11 +3,9 @@ import { Cron, CronExpression } from "@nestjs/schedule";
 import { ApplicationUserDocument } from "../application-user/entities/application-user.entity";
 import { CleaningBookingRepository } from "../cleaning-booking/cleaning-booking.repository";
 import { CleaningBookingDocument } from "../cleaning-booking/entities/cleaning-booking.entity";
-import { CleaningBookingStatusEnum } from "../cleaning-booking/enum/cleaning-booking-status.enum";
 import { EmailService } from "../email/email.service";
 import { CleaningSubscriptionRepository } from "./cleaning-subscription.repository";
 import { CleaningSubscriptionService } from "./cleaning-subscription.service";
-import { CleaningSubscriptionFrequencyEnum } from "./enum/cleaning-subscription-frequency.enum";
 
 @Injectable()
 export class CleaningSubscriptionTask {
@@ -27,53 +25,31 @@ export class CleaningSubscriptionTask {
     if (this.isTaskRunning) return;
 
     this.isTaskRunning = true;
-    this.logger.log("Running subscription update task");
+    this.logger.log("Running subscription schedular tasks");
 
     await this.notifyUsersForUpcomingBookings();
     await this.renewSubsciptionBookings();
 
     this.isTaskRunning = false;
-    this.logger.log("Finished subscription update task");
+    this.logger.log("Finished subscription schedular tasks");
   }
 
   //#region Private helper methods
   private async notifyUsersForUpcomingBookings() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const startDate = new Date(today);
-    startDate.setDate(today.getDate() + 4);
-
-    const endDate = new Date(today);
-    endDate.setDate(today.getDate() + 5);
-
     const upcomingSubscriptionBookings =
-      await this.cleaningSubscriptionRepository.getAll(
-        {
-          subscriptionFrequency: {
-            $ne: CleaningSubscriptionFrequencyEnum.ONETIME,
-          },
-          nextScheduleDate: { $gte: startDate, $lt: endDate },
-        },
-        {
-          populate: { path: "subscribedUser" },
-        },
-      );
+      await this.cleaningSubscriptionRepository.getAllSubscriptionsForBookingReminderNotification();
 
     for (const subscription of upcomingSubscriptionBookings) {
       try {
-        if (!subscription.nextScheduleDate) {
-          throw new Error(
-            `No next schedule date was found for subscription ID: ${subscription.id}`,
-          );
-        }
-
+        const currentBooking =
+          subscription.currentBooking as unknown as CleaningBookingDocument;
         const subscribedUser =
           subscription.subscribedUser as unknown as ApplicationUserDocument;
 
         await this.emailService.sendUpcomingBookingReminderMail(
           subscribedUser.email,
-          subscription.nextScheduleDate,
+          subscribedUser.fullName,
+          currentBooking.cleaningDate,
           subscription.subscriptionFrequency,
         );
 
@@ -147,7 +123,6 @@ export class CleaningSubscriptionTask {
               currentBooking.suppliesCharges -
               currentBooking.discountAmount,
           ),
-          bookingStatus: CleaningBookingStatusEnum.BookingConfirmed,
           createdBy: subscribedUser._id?.toString(),
         });
 
@@ -180,7 +155,7 @@ export class CleaningSubscriptionTask {
           subscribedUser.email,
           subscribedUser.fullName,
           newBooking.cleaningDate,
-          newBooking.cleaningDuration,
+          subscription.subscriptionFrequency,
         );
 
         this.logger.log(

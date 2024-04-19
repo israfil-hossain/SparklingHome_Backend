@@ -1,6 +1,6 @@
 export enum CleaningBookingStatusEnum {
   BookingInitiated = "BookingInitiated",
-  BookingConfirmed = "BookingConfirmed",
+  // BookingConfirmed = "BookingConfirmed",
   BookingServed = "BookingServed",
   BookingCompleted = "BookingCompleted",
   BookingCancelled = "BookingCancelled",

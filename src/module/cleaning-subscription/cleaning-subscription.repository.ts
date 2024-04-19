@@ -25,8 +25,86 @@ export class CleaningSubscriptionRepository extends GenericRepository<CleaningSu
     this.logger = logger;
   }
 
+  async getAllSubscriptionsForBookingReminderNotification(): Promise<
+    CleaningSubscriptionDocument[]
+  > {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() + 4);
+
+    const endDate = new Date(today);
+    endDate.setDate(today.getDate() + 5);
+
+    const modelAggregation = this.model
+      .aggregate()
+      .match({
+        isActive: true,
+      })
+      .lookup({
+        from: CleaningBooking.name.toLowerCase().concat("s"),
+        let: { currentBookingId: "$currentBooking" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$$currentBookingId", { $toString: "$_id" }] },
+                  { $eq: ["$isActive", true] },
+                  {
+                    $and: [
+                      { $gte: ["$cleaningDate", startDate] },
+                      { $lt: ["$cleaningDate", endDate] },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              cleaningDate: 1,
+            },
+          },
+        ],
+        as: "currentBooking",
+      })
+      .unwind("$currentBooking")
+      .lookup({
+        from: ApplicationUser.name.toLocaleLowerCase().concat("s"),
+        let: { subscribedUserId: "$subscribedUser" },
+        pipeline: [
+          {
+            $match: {
+              isActive: true,
+              $expr: {
+                $eq: [
+                  {
+                    $toString: "$_id",
+                  },
+                  "$$subscribedUserId",
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              email: 1,
+              fullName: 1,
+            },
+          },
+        ],
+        as: "subscribedUser",
+      })
+      .unwind("$subscribedUser");
+
+    const result = await modelAggregation.exec();
+    return result;
+  }
+
   async getAllSubscriptionsForBookingRenew(
-    upcomingDate: Date,
+    nextScheduleDateLookup: Date,
   ): Promise<CleaningSubscriptionDocument[]> {
     const modelAggregation = this.model
       .aggregate()
@@ -92,7 +170,7 @@ export class CleaningSubscriptionRepository extends GenericRepository<CleaningSu
         subscriptionFrequency: {
           $ne: CleaningSubscriptionFrequencyEnum.ONETIME,
         },
-        nextScheduleDate: { $lte: upcomingDate },
+        nextScheduleDate: { $lte: nextScheduleDateLookup },
       });
 
     const result = await modelAggregation.exec();

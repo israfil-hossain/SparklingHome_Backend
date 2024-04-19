@@ -2,14 +2,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Upcoming Cleaning Reminder - {{companyName}}</title>
     <style>
       body { font-family: Arial, sans-serif; margin: 0; padding: 20px;
-      background-color: #f5f5f5; } .container { background-color: #fff; padding:
-      20px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      margin: 10px auto; max-width: 600px; } h3 { color: #333; margin-bottom:
-      15px; } p { margin: 5px 0; line-height: 1.5; } a { color: #3aa99e;
-      text-decoration: none; } a:hover { text-decoration: underline; }
+      background-color: #f5f5f5; } h3 { color: #333; margin-bottom: 15px; } p {
+      margin: 5px 0; line-height: 1.5; } a { color: #3aa99e; text-decoration:
+      none; } a:hover { text-decoration: underline; }
     </style>
   </head>
   <body>
@@ -24,17 +21,40 @@
       />
     </div>
     <div class="container">
-      <h3>Upcoming Cleaning Reminder</h3>
+      <h3>Important Notice: Your Upcoming Cleaning Booking</h3>
       <p>Dear {{userName}},</p>
-      <p>This is a friendly reminder that your next cleaning service with
-        <strong>{{companyName}}</strong>
-        is scheduled for
-        <strong>{{cleaningDate}}</strong>.</p>
-      <p>The cleaning will take approximately
-        <strong>{{cleaningDuration}} hours</strong>.</p>
-      <p>You can view and manage your booking details through our website:
-        <a href="{{companyWebsite}}/profile">View Booking Details</a></p>
-      <p>We look forward to providing you with a sparkling clean home!</p>
+      <p>We want to remind you about your scheduled cleaning session, which
+        occurs
+        <strong>
+          {{subscriptionFrequency}}
+        </strong>
+        and the upcoming Booking Date
+        <strong>
+          {{bookingDate}}
+        </strong>
+        at
+        <strong>
+          {{bookingTime}}
+        </strong>. Your booking is confirmed.</p>
+
+      <p>If you need to make any changes or cancel this booking, please visit
+        your
+        <a href="{{cancelLink}}">profile page</a>
+        to initiate the process.</p>
+      <div style="text-align: center;">
+        <a
+          href="{{cancelLink}}"
+          style="display: inline-block; padding: 10px 20px; background-color: #dc3545; color: #fff; text-decoration: none; margin-top: 10px;"
+        >Cancel Booking</a>
+      </div>
+
+      <p><strong>Note:</strong>
+        Should you wish to reschedule your booking, kindly contact us at
+        <a href="tel:0761525840">0761525840</a>
+        or via email at
+        <a
+          href="mailto:support@glansandehem.se"
+        >support@glansandehem.se</a>.</p>
     </div>
     <footer style="background-color: #eee; padding: 10px; text-align: center;">
       <p>Glänsande Hem Städ<br />
