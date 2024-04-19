@@ -142,9 +142,11 @@ export class CleaningSubscriptionTask {
           suppliesCharges: currentBooking.suppliesCharges,
           discountAmount: currentBooking.discountAmount,
           vatAmount: currentBooking.vatAmount,
-          additionalCharges: currentBooking.additionalCharges,
-          totalAmount: currentBooking.totalAmount,
-          remarks: currentBooking.remarks,
+          totalAmount: Math.ceil(
+            currentBooking.cleaningPrice +
+              currentBooking.suppliesCharges -
+              currentBooking.discountAmount,
+          ),
           bookingStatus: CleaningBookingStatusEnum.BookingConfirmed,
           createdBy: subscribedUser._id?.toString(),
         });
