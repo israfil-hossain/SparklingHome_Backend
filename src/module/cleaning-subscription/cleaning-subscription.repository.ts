@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
+import { ApplicationUser } from "../application-user/entities/application-user.entity";
 import { CleaningBooking } from "../cleaning-booking/entities/cleaning-booking.entity";
 import { CleaningBookingPaymentStatusEnum } from "../cleaning-booking/enum/cleaning-booking-payment-status.enum";
 import { CleaningBookingStatusEnum } from "../cleaning-booking/enum/cleaning-booking-status.enum";
@@ -9,6 +10,7 @@ import {
   CleaningSubscriptionDocument,
   CleaningSubscriptionType,
 } from "./entities/cleaning-subscription.entity";
+import { CleaningSubscriptionFrequencyEnum } from "./enum/cleaning-subscription-frequency.enum";
 
 @Injectable()
 export class CleaningSubscriptionRepository extends GenericRepository<CleaningSubscriptionDocument> {
@@ -58,10 +60,37 @@ export class CleaningSubscriptionRepository extends GenericRepository<CleaningSu
         as: "currentBooking",
       })
       .unwind("$currentBooking")
+      .lookup({
+        from: ApplicationUser.name.toLocaleLowerCase().concat("s"),
+        let: { subscribedUserId: "$subscribedUser" },
+        pipeline: [
+          {
+            $match: {
+              isActive: true,
+              $expr: {
+                $eq: [
+                  {
+                    $toString: "$_id",
+                  },
+                  "$$subscribedUserId",
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              email: 1,
+              fullName: 1,
+            },
+          },
+        ],
+        as: "subscribedUser",
+      })
+      .unwind("$subscribedUser")
       .match({
         isActive: true,
         subscriptionFrequency: {
-          $ne: "OneTimeOnly",
+          $ne: CleaningSubscriptionFrequencyEnum.ONETIME,
         },
         nextScheduleDate: { $lte: upcomingDate },
       });

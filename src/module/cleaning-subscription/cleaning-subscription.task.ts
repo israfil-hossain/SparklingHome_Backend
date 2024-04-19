@@ -3,7 +3,7 @@ import { Cron, CronExpression } from "@nestjs/schedule";
 import { ApplicationUserDocument } from "../application-user/entities/application-user.entity";
 import { CleaningBookingRepository } from "../cleaning-booking/cleaning-booking.repository";
 import { CleaningBookingDocument } from "../cleaning-booking/entities/cleaning-booking.entity";
-import { CleaningCouponRepository } from "../cleaning-coupon/cleaning-coupon.repository";
+import { CleaningBookingStatusEnum } from "../cleaning-booking/enum/cleaning-booking-status.enum";
 import { EmailService } from "../email/email.service";
 import { CleaningSubscriptionRepository } from "./cleaning-subscription.repository";
 import { CleaningSubscriptionService } from "./cleaning-subscription.service";
@@ -17,11 +17,11 @@ export class CleaningSubscriptionTask {
   constructor(
     private readonly cleaningSubscriptionRepository: CleaningSubscriptionRepository,
     private readonly cleaningSubscriptionService: CleaningSubscriptionService,
-    private readonly cleaningCouponRepository: CleaningCouponRepository,
     private readonly cleaningBookingRepository: CleaningBookingRepository,
     private readonly emailService: EmailService,
   ) {}
 
+  // @Cron(CronExpression.EVERY_MINUTE)
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
   async subscriptionUpdateTask() {
     if (this.isTaskRunning) return;
@@ -82,7 +82,7 @@ export class CleaningSubscriptionTask {
         );
       } catch (error) {
         this.logger.error(
-          "Error notifying booking user from scheduler: ",
+          "Error notifying user for upcoming booking from scheduler: ",
           error,
         );
         continue;
@@ -114,37 +114,40 @@ export class CleaningSubscriptionTask {
         if (!subscription.nextScheduleDate)
           throw new Error("Next schedule date is not valid");
 
-        const cleaningCoupon = await this.cleaningCouponRepository.getOneWhere({
-          _id: subscription.cleaningCoupon,
-          isActive: true,
-        });
-
         const currentDate = new Date();
-        let cleaningDate: Date = subscription.nextScheduleDate;
+        let newCleaningDate: Date = subscription.nextScheduleDate;
         currentDate.setHours(
-          cleaningDate.getHours(),
-          cleaningDate.getMinutes(),
-          cleaningDate.getSeconds(),
-          cleaningDate.getMilliseconds(),
+          newCleaningDate.getHours(),
+          newCleaningDate.getMinutes(),
+          newCleaningDate.getSeconds(),
+          newCleaningDate.getMilliseconds(),
         );
 
-        while (cleaningDate <= currentDate) {
-          const newCleaningDate =
-            this.cleaningSubscriptionService.getNextScheduleDate(
-              cleaningDate,
-              subscription.subscriptionFrequency,
-            );
+        while (newCleaningDate <= currentDate) {
+          const newDate = this.cleaningSubscriptionService.getNextScheduleDate(
+            newCleaningDate,
+            subscription.subscriptionFrequency,
+          );
 
-          if (!newCleaningDate) break;
-          cleaningDate = newCleaningDate;
+          if (!newDate) break;
+          newCleaningDate = newDate;
         }
 
-        const newBooking =
-          await this.cleaningSubscriptionService.createBookingFromSubscription(
-            subscription,
-            cleaningDate,
-            cleaningCoupon,
-          );
+        const newBooking = await this.cleaningBookingRepository.create({
+          cleaningDate: newCleaningDate,
+          bookingUser: subscribedUser._id?.toString(),
+          subscriptionPrice: currentBooking.subscriptionPrice,
+          cleaningDuration: currentBooking.cleaningDuration,
+          cleaningPrice: currentBooking.cleaningPrice,
+          suppliesCharges: currentBooking.suppliesCharges,
+          discountAmount: currentBooking.discountAmount,
+          vatAmount: currentBooking.vatAmount,
+          additionalCharges: currentBooking.additionalCharges,
+          totalAmount: currentBooking.totalAmount,
+          remarks: currentBooking.remarks,
+          bookingStatus: CleaningBookingStatusEnum.BookingConfirmed,
+          createdBy: subscribedUser._id?.toString(),
+        });
 
         const nextScheduleDate =
           this.cleaningSubscriptionService.getNextScheduleDate(
@@ -158,6 +161,7 @@ export class CleaningSubscriptionTask {
             currentBooking: newBooking.id,
             nextScheduleDate,
             updatedAt: new Date(),
+            updatedBy: subscribedUser._id?.toString(),
           },
         );
 
@@ -166,6 +170,7 @@ export class CleaningSubscriptionTask {
           {
             isActive: false,
             updatedAt: new Date(),
+            updatedBy: subscribedUser._id?.toString(),
           },
         );
 

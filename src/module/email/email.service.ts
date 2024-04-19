@@ -142,16 +142,16 @@ export class EmailService {
 
   async sendUpcomingBookingReminderMail(
     userEmail: string,
-    rescheduledCleaningDate: Date,
+    upcomingDate: Date,
     subscriptionFrequency: CleaningSubscriptionFrequencyEnum,
   ) {
     try {
-      const cleaningDate = new DateTimeHelper(rescheduledCleaningDate);
+      const cleaningDate = new DateTimeHelper(upcomingDate);
       await this.mailerService.sendMail({
         to: userEmail,
         subject:
           "Soft reminder! Upcoming cleaning services have been initially confirmed",
-        template: "./reschedule-notification",
+        template: "./upcoming-booking",
         context: {
           cancelLink: `${this.staticWebsiteUrl}/profile`,
           bookingDate: cleaningDate.formatDate(),
