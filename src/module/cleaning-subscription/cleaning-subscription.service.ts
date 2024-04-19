@@ -663,14 +663,18 @@ export class CleaningSubscriptionService {
     // Price calculations
     const cleaningDurationInHours = subscription.cleaningDurationInHours;
     const cleaningPricePerHour = cleaningPrice.subscriptionPrice;
-    const totalCleaningPrice = cleaningDurationInHours * cleaningPricePerHour;
+    const totalCleaningPrice = Math.ceil(
+      cleaningDurationInHours * cleaningPricePerHour,
+    );
 
     // Coupon Discount Calculations
     let couponDiscountAmount = 0;
     if (coupon) {
       const discountAmount =
         totalCleaningPrice * (coupon.discountPercentage / 100);
-      couponDiscountAmount = Math.min(discountAmount, coupon.maximumDiscount);
+      couponDiscountAmount = Math.floor(
+        Math.min(discountAmount, coupon.maximumDiscount),
+      );
     }
 
     // Final Cleaning Price Calculations
