@@ -624,19 +624,19 @@ export class CleaningSubscriptionService {
   ): Date | null {
     const nextScheduleDate = new Date(previousDate);
 
-    switch (frequency) {
-      case CleaningSubscriptionFrequencyEnum.WEEKLY:
-        nextScheduleDate.setDate(nextScheduleDate.getDate() + 7);
-        break;
-      case CleaningSubscriptionFrequencyEnum.BIWEEKLY:
-        nextScheduleDate.setDate(nextScheduleDate.getDate() + 14);
-        break;
-      case CleaningSubscriptionFrequencyEnum.MONTHLY:
-        nextScheduleDate.setMonth(nextScheduleDate.getMonth() + 1);
-        break;
-      default:
-        return null;
-    }
+    const daysToAdd = {
+      [CleaningSubscriptionFrequencyEnum.WEEKLY]: 7,
+      [CleaningSubscriptionFrequencyEnum.BIWEEKLY]: 14,
+      [CleaningSubscriptionFrequencyEnum.MONTHLY]: 30,
+      [CleaningSubscriptionFrequencyEnum.ONETIME]: 0,
+    }[frequency];
+
+    if (!daysToAdd) return null;
+
+    nextScheduleDate.setDate(nextScheduleDate.getDate() + daysToAdd);
+    const diffDays =
+      (nextScheduleDate.getDay() - previousDate.getDay() + 7) % 7;
+    nextScheduleDate.setDate(nextScheduleDate.getDate() - diffDays);
 
     return nextScheduleDate;
   }

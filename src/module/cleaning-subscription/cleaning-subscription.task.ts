@@ -151,13 +151,6 @@ export class CleaningSubscriptionTask {
           },
         );
 
-        await this.emailService.sendBookingRenewedMail(
-          subscribedUser.email,
-          subscribedUser.fullName,
-          newBooking.cleaningDate,
-          subscription.subscriptionFrequency,
-        );
-
         this.logger.log(
           "Booking renewed from subscription with Id: " +
             subscription._id.toString(),
