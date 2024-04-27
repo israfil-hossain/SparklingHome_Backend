@@ -134,7 +134,6 @@ export class AuthenticationService {
       ) {
         this.logger.error(
           `Invalid credentials provided with email: ${signInDto.email}`,
-          signInDto,
         );
         throw new UnauthorizedException("Invalid credentials provided");
       }
@@ -142,7 +141,6 @@ export class AuthenticationService {
       if (user.isPasswordLess) {
         this.logger.error(
           `Password-less login attempted with email: ${signInDto.email}`,
-          signInDto,
         );
         throw new BadRequestException(
           "To enable password-based login, please set up a password for your account alongside social login.",
@@ -260,7 +258,6 @@ export class AuthenticationService {
       ) {
         this.logger.error(
           `User ${userId} tried to change password with an incorrect old password`,
-          changePasswordDto,
         );
         throw new BadRequestException("Old Password is incorrect");
       }
