@@ -28,152 +28,166 @@ export class CleaningSubscriptionRepository extends GenericRepository<CleaningSu
   async getAllSubscriptionsForBookingReminderNotification(): Promise<
     CleaningSubscriptionDocument[]
   > {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    const startDate = new Date(today);
-    startDate.setDate(today.getDate() + 4);
+      const startDate = new Date(today);
+      startDate.setDate(today.getDate() + 4);
 
-    const endDate = new Date(today);
-    endDate.setDate(today.getDate() + 5);
+      const endDate = new Date(today);
+      endDate.setDate(today.getDate() + 5);
 
-    const modelAggregation = this.model
-      .aggregate()
-      .match({
-        isActive: true,
-      })
-      .lookup({
-        from: CleaningBooking.name.toLowerCase().concat("s"),
-        let: { currentBookingId: "$currentBooking" },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: ["$$currentBookingId", { $toString: "$_id" }] },
-                  { $eq: ["$isActive", true] },
-                  {
-                    $and: [
-                      { $gte: ["$cleaningDate", startDate] },
-                      { $lt: ["$cleaningDate", endDate] },
-                    ],
-                  },
-                ],
+      const modelAggregation = this.model
+        .aggregate()
+        .match({
+          isActive: true,
+        })
+        .lookup({
+          from: CleaningBooking.name.toLowerCase().concat("s"),
+          let: { currentBookingId: "$currentBooking" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$$currentBookingId", { $toString: "$_id" }] },
+                    { $eq: ["$isActive", true] },
+                    {
+                      $and: [
+                        { $gte: ["$cleaningDate", startDate] },
+                        { $lt: ["$cleaningDate", endDate] },
+                      ],
+                    },
+                  ],
+                },
               },
             },
-          },
-          {
-            $project: {
-              cleaningDate: 1,
-            },
-          },
-        ],
-        as: "currentBooking",
-      })
-      .unwind("$currentBooking")
-      .lookup({
-        from: ApplicationUser.name.toLocaleLowerCase().concat("s"),
-        let: { subscribedUserId: "$subscribedUser" },
-        pipeline: [
-          {
-            $match: {
-              isActive: true,
-              $expr: {
-                $eq: [
-                  {
-                    $toString: "$_id",
-                  },
-                  "$$subscribedUserId",
-                ],
+            {
+              $project: {
+                cleaningDate: 1,
               },
             },
-          },
-          {
-            $project: {
-              email: 1,
-              fullName: 1,
+          ],
+          as: "currentBooking",
+        })
+        .unwind("$currentBooking")
+        .lookup({
+          from: ApplicationUser.name.toLocaleLowerCase().concat("s"),
+          let: { subscribedUserId: "$subscribedUser" },
+          pipeline: [
+            {
+              $match: {
+                isActive: true,
+                $expr: {
+                  $eq: [
+                    {
+                      $toString: "$_id",
+                    },
+                    "$$subscribedUserId",
+                  ],
+                },
+              },
             },
-          },
-        ],
-        as: "subscribedUser",
-      })
-      .unwind("$subscribedUser");
+            {
+              $project: {
+                email: 1,
+                fullName: 1,
+              },
+            },
+          ],
+          as: "subscribedUser",
+        })
+        .unwind("$subscribedUser");
 
-    const result = await modelAggregation.exec();
-    return result;
+      const result = await modelAggregation.exec();
+      return result;
+    } catch (error) {
+      this.logger.error("Error finding subscriptions for notification:", error);
+      return [];
+    }
   }
 
-  async getAllSubscriptionsForBookingRenew(
-    nextScheduleDateLookup: Date,
-  ): Promise<CleaningSubscriptionDocument[]> {
-    const modelAggregation = this.model
-      .aggregate()
-      .lookup({
-        from: CleaningBooking.name.toLowerCase().concat("s"),
-        let: { currentBookingId: "$currentBooking" },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: ["$$currentBookingId", { $toString: "$_id" }] },
-                  { $eq: ["$isActive", true] },
-                  {
-                    $eq: [
-                      "$bookingStatus",
-                      CleaningBookingStatusEnum.BookingCompleted,
-                    ],
-                  },
-                  {
-                    $eq: [
-                      "$paymentStatus",
-                      CleaningBookingPaymentStatusEnum.PaymentCompleted,
-                    ],
-                  },
-                ],
-              },
-            },
-          },
-        ],
-        as: "currentBooking",
-      })
-      .unwind("$currentBooking")
-      .lookup({
-        from: ApplicationUser.name.toLocaleLowerCase().concat("s"),
-        let: { subscribedUserId: "$subscribedUser" },
-        pipeline: [
-          {
-            $match: {
-              isActive: true,
-              $expr: {
-                $eq: [
-                  {
-                    $toString: "$_id",
-                  },
-                  "$$subscribedUserId",
-                ],
-              },
-            },
-          },
-          {
-            $project: {
-              email: 1,
-              fullName: 1,
-            },
-          },
-        ],
-        as: "subscribedUser",
-      })
-      .unwind("$subscribedUser")
-      .match({
-        isActive: true,
-        subscriptionFrequency: {
-          $ne: CleaningSubscriptionFrequencyEnum.ONETIME,
-        },
-        nextScheduleDate: { $lte: nextScheduleDateLookup },
-      });
+  async getAllSubscriptionsForBookingRenew(): Promise<
+    CleaningSubscriptionDocument[]
+  > {
+    try {
+      const cleaningDateLookup = new Date();
+      cleaningDateLookup.setHours(0, 0, 0, 0);
+      cleaningDateLookup.setDate(cleaningDateLookup.getDate() - 1);
 
-    const result = await modelAggregation.exec();
-    return result;
+      const modelAggregation = this.model
+        .aggregate()
+        .lookup({
+          from: CleaningBooking.name.toLowerCase().concat("s"),
+          let: { currentBookingId: "$currentBooking" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$$currentBookingId", { $toString: "$_id" }] },
+                    { $eq: ["$isActive", true] },
+                    { $lte: ["$cleaningDate", cleaningDateLookup] },
+                    {
+                      $eq: [
+                        "$bookingStatus",
+                        CleaningBookingStatusEnum.BookingCompleted,
+                      ],
+                    },
+                    {
+                      $eq: [
+                        "$paymentStatus",
+                        CleaningBookingPaymentStatusEnum.PaymentCompleted,
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "currentBooking",
+        })
+        .unwind("$currentBooking")
+        .lookup({
+          from: ApplicationUser.name.toLocaleLowerCase().concat("s"),
+          let: { subscribedUserId: "$subscribedUser" },
+          pipeline: [
+            {
+              $match: {
+                isActive: true,
+                $expr: {
+                  $eq: [
+                    {
+                      $toString: "$_id",
+                    },
+                    "$$subscribedUserId",
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                email: 1,
+                fullName: 1,
+              },
+            },
+          ],
+          as: "subscribedUser",
+        })
+        .unwind("$subscribedUser")
+        .match({
+          isActive: true,
+          subscriptionFrequency: {
+            $ne: CleaningSubscriptionFrequencyEnum.ONETIME,
+          },
+        });
+
+      const result = await modelAggregation.exec();
+      return result;
+    } catch (error) {
+      this.logger.error("Error finding subscriptions for renew:", error);
+      return [];
+    }
   }
 }

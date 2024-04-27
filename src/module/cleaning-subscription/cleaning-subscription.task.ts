@@ -19,7 +19,7 @@ export class CleaningSubscriptionTask {
     private readonly emailService: EmailService,
   ) {}
 
-  // @Cron(CronExpression.EVERY_MINUTE)
+  // @Cron(CronExpression.EVERY_30_SECONDS)
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
   async subscriptionUpdateTask() {
     if (this.isTaskRunning) return;
@@ -67,14 +67,8 @@ export class CleaningSubscriptionTask {
   }
 
   private async renewSubsciptionBookings() {
-    const scheduleDate = new Date();
-    scheduleDate.setHours(0, 0, 0, 0);
-    scheduleDate.setDate(scheduleDate.getDate() + 2);
-
     const subscriptionsForBookingRenew =
-      await this.cleaningSubscriptionRepository.getAllSubscriptionsForBookingRenew(
-        scheduleDate,
-      );
+      await this.cleaningSubscriptionRepository.getAllSubscriptionsForBookingRenew();
 
     for (const subscription of subscriptionsForBookingRenew) {
       try {
