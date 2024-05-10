@@ -540,7 +540,7 @@ export class CleaningSubscriptionService {
         queryResult.count,
         listQueryDto.Page ?? 1,
         listQueryDto.PageSize ?? 10,
-        queryResult.result,
+        queryResult.results,
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;

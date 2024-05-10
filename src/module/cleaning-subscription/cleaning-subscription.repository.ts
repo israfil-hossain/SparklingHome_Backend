@@ -16,7 +16,7 @@ import { CleaningSubscriptionFrequencyEnum } from "./enum/cleaning-subscription-
 
 interface ICleaningSubscriptionFilterResult {
   count: number;
-  result: CleaningSubscriptionDocument[];
+  results: CleaningSubscriptionDocument[];
 }
 
 @Injectable()
@@ -36,6 +36,10 @@ export class CleaningSubscriptionRepository extends GenericRepository<CleaningSu
     queryDto: ListCleaningSubscriptionQueryDto,
   ): Promise<ICleaningSubscriptionFilterResult> {
     try {
+      const page = queryDto.Page || 1;
+      const size = queryDto.PageSize || 10;
+      const skip = (page - 1) * size;
+
       const subscriptionSearchQuery: FilterQuery<CleaningSubscriptionDocument> =
         {
           isActive: !queryDto.OnlyInactive,
@@ -113,42 +117,30 @@ export class CleaningSubscriptionRepository extends GenericRepository<CleaningSu
           ],
           as: "subscribedUser",
         })
-        .unwind("$subscribedUser");
-
-      // Execute the count aggregation query
-      const countPipeline = [...modelAggregation.pipeline()]; // Copy the pipeline
-      countPipeline.push({
-        $group: {
+        .unwind("$subscribedUser")
+        .group({
           _id: null,
           count: { $sum: 1 },
-        },
-      });
+          results: { $push: "$$ROOT" },
+        })
+        .project({
+          count: 1,
+          results: { $slice: ["$results", skip, size] },
+        });
 
-      const countResult = await this.model.aggregate(countPipeline).exec();
+      const aggregationResult = await modelAggregation.exec();
 
-      const totalCount = countResult.length > 0 ? countResult[0].count : 0;
-
-      const page = queryDto.Page || 1;
-      const size = queryDto.PageSize || 10;
-      const skip = (page - 1) * size;
-
-      // Execute the pagination aggregation query
-      const subscriptionResult = await modelAggregation
-        .skip(skip)
-        .limit(size)
-        .exec();
-
-      const queryResult: ICleaningSubscriptionFilterResult = {
-        count: totalCount,
-        result: subscriptionResult,
-      };
+      const queryResult: ICleaningSubscriptionFilterResult =
+        aggregationResult.length > 0
+          ? aggregationResult[0]
+          : { count: 0, results: [] };
 
       return queryResult;
     } catch (error) {
       this.logger.error("Error finding subscriptions by filter: ", error);
       return {
         count: 0,
-        result: [],
+        results: [],
       };
     }
   }
