@@ -1,16 +1,23 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
+import { FilterQuery } from "mongoose";
 import { ApplicationUser } from "../application-user/entities/application-user.entity";
 import { CleaningBooking } from "../cleaning-booking/entities/cleaning-booking.entity";
 import { CleaningBookingPaymentStatusEnum } from "../cleaning-booking/enum/cleaning-booking-payment-status.enum";
 import { CleaningBookingStatusEnum } from "../cleaning-booking/enum/cleaning-booking-status.enum";
 import { GenericRepository } from "../common/repository/generic-repository";
+import { ListCleaningSubscriptionQueryDto } from "./dto/list-cleaning-subscription-query.dto";
 import {
   CleaningSubscription,
   CleaningSubscriptionDocument,
   CleaningSubscriptionType,
 } from "./entities/cleaning-subscription.entity";
 import { CleaningSubscriptionFrequencyEnum } from "./enum/cleaning-subscription-frequency.enum";
+
+interface ICleaningSubscriptionFilterResult {
+  count: number;
+  result: CleaningSubscriptionDocument[];
+}
 
 @Injectable()
 export class CleaningSubscriptionRepository extends GenericRepository<CleaningSubscriptionDocument> {
@@ -23,6 +30,127 @@ export class CleaningSubscriptionRepository extends GenericRepository<CleaningSu
     const logger = new Logger(CleaningSubscriptionRepository.name);
     super(model, logger);
     this.logger = logger;
+  }
+
+  async getAllSubscriptionsByFilter(
+    queryDto: ListCleaningSubscriptionQueryDto,
+  ): Promise<ICleaningSubscriptionFilterResult> {
+    try {
+      const subscriptionSearchQuery: FilterQuery<CleaningSubscriptionDocument> =
+        {
+          isActive: !queryDto.OnlyInactive,
+        };
+
+      if (queryDto.Frequency) {
+        subscriptionSearchQuery.subscriptionFrequency = queryDto.Frequency;
+      }
+
+      const cleaningDateFilter = [];
+
+      if (queryDto.FromDate) {
+        cleaningDateFilter.push({
+          $gte: ["$cleaningDate", new Date(queryDto.FromDate)],
+        });
+      }
+
+      if (queryDto.ToDate) {
+        cleaningDateFilter.push({
+          $lte: ["$cleaningDate", new Date(queryDto.ToDate)],
+        });
+      }
+
+      const modelAggregation = this.model
+        .aggregate()
+        .match(subscriptionSearchQuery)
+        .lookup({
+          from: CleaningBooking.name.toLowerCase().concat("s"),
+          let: { currentBookingId: "$currentBooking" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$$currentBookingId", { $toString: "$_id" }] },
+                    { $eq: ["$isActive", true] },
+                    {
+                      $and: cleaningDateFilter,
+                    },
+                  ],
+                },
+              },
+            },
+            {
+              $unset: [
+                "isActive",
+                "createdAt",
+                "createdBy",
+                "updatedAt",
+                "updatedBy",
+                "paymentReceive",
+              ],
+            },
+          ],
+          as: "currentBooking",
+        })
+        .unwind("$currentBooking")
+        .lookup({
+          from: ApplicationUser.name.toLocaleLowerCase().concat("s"),
+          let: { subscribedUserId: "$subscribedUser" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: [{ $toString: "$_id" }, "$$subscribedUserId"] },
+                    { $eq: ["$isActive", true] },
+                  ],
+                },
+              },
+            },
+            {
+              $unset: ["role", "isActive", "password", "isPasswordLess"],
+            },
+          ],
+          as: "subscribedUser",
+        })
+        .unwind("$subscribedUser");
+
+      // Execute the count aggregation query
+      const countPipeline = [...modelAggregation.pipeline()]; // Copy the pipeline
+      countPipeline.push({
+        $group: {
+          _id: null,
+          count: { $sum: 1 },
+        },
+      });
+
+      const countResult = await this.model.aggregate(countPipeline).exec();
+
+      const totalCount = countResult.length > 0 ? countResult[0].count : 0;
+
+      const page = queryDto.Page || 1;
+      const size = queryDto.PageSize || 10;
+      const skip = (page - 1) * size;
+
+      // Execute the pagination aggregation query
+      const subscriptionResult = await modelAggregation
+        .skip(skip)
+        .limit(size)
+        .exec();
+
+      const queryResult: ICleaningSubscriptionFilterResult = {
+        count: totalCount,
+        result: subscriptionResult,
+      };
+
+      return queryResult;
+    } catch (error) {
+      this.logger.error("Error finding subscriptions by filter: ", error);
+      return {
+        count: 0,
+        result: [],
+      };
+    }
   }
 
   async getAllSubscriptionsForBookingReminderNotification(): Promise<

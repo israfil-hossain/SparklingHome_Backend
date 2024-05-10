@@ -527,53 +527,21 @@ export class CleaningSubscriptionService {
     }
   }
 
-  async findAll({
-    Page = 1,
-    PageSize = 10,
-    Frequency,
-  }: ListCleaningSubscriptionQueryDto): Promise<PaginatedResponseDto> {
+  async findAll(
+    listQueryDto: ListCleaningSubscriptionQueryDto,
+  ): Promise<PaginatedResponseDto> {
     try {
-      // Search query setup
-      const searchQuery: FilterQuery<CleaningSubscriptionDocument> = {};
-      if (Frequency) {
-        searchQuery.subscriptionFrequency = Frequency;
-      }
+      const queryResult =
+        await this.cleaningSubscriptionRepository.getAllSubscriptionsByFilter(
+          listQueryDto,
+        );
 
-      // Pagination setup
-      const totalRecords =
-        await this.cleaningSubscriptionRepository.count(searchQuery);
-      const skip = (Page - 1) * PageSize;
-
-      const result = await this.cleaningSubscriptionRepository.getAll(
-        searchQuery,
-        {
-          limit: PageSize,
-          skip,
-          sort: {
-            createdAt: -1,
-          },
-          populate: [
-            {
-              path: "subscribedUser",
-              select: "-role -isActive -password -isPasswordLess",
-              populate: [
-                {
-                  path: "profilePicture",
-                  select: "url",
-                  transform: (doc) => doc?.url ?? null,
-                },
-              ],
-            },
-            {
-              path: "currentBooking",
-              select:
-                "-isActive -createdAt -createdBy -updatedAt -updatedBy -paymentReceive",
-            },
-          ],
-        },
+      return new PaginatedResponseDto(
+        queryResult.count,
+        listQueryDto.Page ?? 1,
+        listQueryDto.PageSize ?? 10,
+        queryResult.result,
       );
-
-      return new PaginatedResponseDto(totalRecords, Page, PageSize, result);
     } catch (error) {
       if (error instanceof HttpException) throw error;
 

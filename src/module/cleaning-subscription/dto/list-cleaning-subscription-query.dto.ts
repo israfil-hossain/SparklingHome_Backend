@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsEnum, IsOptional } from "class-validator";
+import { Transform } from "class-transformer";
+import { IsBoolean, IsDateString, IsEnum, IsOptional } from "class-validator";
 import { PaginationQuery } from "../../common/dto/pagintation-query.dto";
 import { CleaningSubscriptionFrequencyEnum } from "../enum/cleaning-subscription-frequency.enum";
 
@@ -14,4 +15,32 @@ export class ListCleaningSubscriptionQueryDto extends PaginationQuery {
   })
   @IsOptional()
   Frequency?: CleaningSubscriptionFrequencyEnum;
+
+  @ApiProperty({
+    required: false,
+    type: Boolean,
+    description: "Only show cancelled cleaning subscriptions.",
+  })
+  @IsOptional()
+  @IsBoolean({ message: "Must be a boolean" })
+  @Transform(({ obj, key }) => {
+    return obj[key] === "true" ? true : obj[key] === "false" ? false : obj[key];
+  })
+  OnlyInactive?: boolean;
+
+  @ApiProperty({
+    required: false,
+    description: "Start date for filtering cleaning subscriptions.",
+  })
+  @IsOptional()
+  @IsDateString()
+  FromDate?: string;
+
+  @ApiProperty({
+    required: false,
+    description: "End date for filtering cleaning subscriptions.",
+  })
+  @IsOptional()
+  @IsDateString()
+  ToDate?: string;
 }
