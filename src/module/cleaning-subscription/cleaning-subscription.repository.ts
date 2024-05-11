@@ -118,6 +118,11 @@ export class CleaningSubscriptionRepository extends GenericRepository<CleaningSu
           as: "subscribedUser",
         })
         .unwind("$subscribedUser")
+        .sort({
+          [queryDto.OrderByNextScheduleDate
+            ? "nextScheduleDate"
+            : "currentBooking.cleaningDate"]: -1,
+        })
         .group({
           _id: null,
           count: { $sum: 1 },

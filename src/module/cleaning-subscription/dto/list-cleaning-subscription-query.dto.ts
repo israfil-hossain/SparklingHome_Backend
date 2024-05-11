@@ -30,6 +30,18 @@ export class ListCleaningSubscriptionQueryDto extends PaginationQuery {
 
   @ApiProperty({
     required: false,
+    type: Boolean,
+    description: "Order by next schedule date for cleaning subscriptions.",
+  })
+  @IsOptional()
+  @IsBoolean({ message: "Must be a boolean" })
+  @Transform(({ obj, key }) => {
+    return obj[key] === "true" ? true : obj[key] === "false" ? false : obj[key];
+  })
+  OrderByNextScheduleDate?: boolean;
+
+  @ApiProperty({
+    required: false,
     description: "Start date for filtering cleaning subscriptions.",
   })
   @IsOptional()
