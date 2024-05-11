@@ -127,22 +127,24 @@ export class PaymentReceiveService {
       const paymentReceive =
         booking.paymentReceive as unknown as PaymentReceiveDocument;
 
-      const paymentIntentResponse =
-        await this.paymentApiClient.get<IPaymentIntentRetrieveDto>(
-          `/v1/payments/${paymentReceive.paymentIntentId}`,
-        );
+      const {
+        data: paymentIntentResponseData,
+        status: paymentIntentResponseStatus,
+      } = await this.paymentApiClient.get<IPaymentIntentRetrieveDto>(
+        `/v1/payments/${paymentReceive.paymentIntentId}`,
+      );
 
-      if (paymentIntentResponse.status !== 200) {
+      if (paymentIntentResponseStatus !== 200) {
         throw new BadRequestException("Payment intent not found.");
       }
 
-      const summary = paymentIntentResponse.data.payment.summary;
+      const summary = paymentIntentResponseData?.payment?.summary;
       if (!summary || !summary.chargedAmount) {
         throw new BadRequestException("Payment not completed yet.");
       }
 
       const paymentReceiveUpdate: UpdateQuery<PaymentReceiveDocument> = {
-        lastPaymentEvent: JSON.stringify(paymentIntentResponse),
+        lastPaymentEvent: JSON.stringify(paymentIntentResponseData),
         paymentDate: new Date(),
       };
 
