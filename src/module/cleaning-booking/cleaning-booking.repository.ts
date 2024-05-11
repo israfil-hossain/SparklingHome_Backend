@@ -61,6 +61,30 @@ export class CleaningBookingRepository extends GenericRepository<CleaningBooking
       const modelAggregation = this.model
         .aggregate()
         .lookup({
+          from: ApplicationUser.name.toLocaleLowerCase().concat("s"),
+          let: { bookingUserId: "$bookingUser" },
+          pipeline: [
+            {
+              $match: {
+                isActive: true,
+                $expr: {
+                  $eq: [
+                    {
+                      $toString: "$_id",
+                    },
+                    "$$bookingUserId",
+                  ],
+                },
+              },
+            },
+            {
+              $unset: ["role", "isActive", "password", "isPasswordLess"],
+            },
+          ],
+          as: "bookingUser",
+        })
+        .unwind("$bookingUser")
+        .lookup({
           from: PaymentReceive.name.toLocaleLowerCase().concat("s"),
           let: { paymentReceiveId: "$paymentReceive" },
           pipeline: [
