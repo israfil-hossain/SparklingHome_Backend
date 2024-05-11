@@ -19,6 +19,7 @@ import { EmailService } from "../email/email.service";
 import { PaymentIntentResponseDto } from "./dto/payment-intent-response.dto";
 import { PaymentReceiveDocument } from "./entities/payment-receive.entity";
 import { PaymentWebhookEventEnum } from "./enum/payment-webhook-event.enum";
+import { IPaymentIntentRetrieveDto } from "./interface/payment-intent-retrieve.interface";
 import {
   IPaymentWebhookEvent,
   IPaymentWebhookEventData,
@@ -89,6 +90,93 @@ export class PaymentReceiveService {
         "Payment intent retrieved successfully",
         paymentIntentResponse,
       );
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      if (error?.response?.data) {
+        this.logger.error(
+          "Error in getPaymentIntent HTTP Response:",
+          error?.response?.data,
+        );
+      }
+
+      this.logger.error("Error in getPaymentIntent:", error);
+      throw new BadRequestException("Failed to get payment intent");
+    }
+  }
+
+  async getPaymentUpdate(bookingId: string): Promise<SuccessResponseDto> {
+    try {
+      const booking = await this.cleaningBookingRepository.getOneWhere(
+        {
+          _id: bookingId,
+          isActive: true,
+          bookingStatus: CleaningBookingStatusEnum.BookingServed,
+          paymentStatus: {
+            $ne: CleaningBookingPaymentStatusEnum.PaymentCompleted,
+          },
+        },
+        {
+          populate: ["paymentReceive", "bookingUser"],
+        },
+      );
+
+      if (!booking || !booking.paymentReceive) {
+        throw new NotFoundException("Booking not found or already completed");
+      }
+
+      const paymentReceive =
+        booking.paymentReceive as unknown as PaymentReceiveDocument;
+
+      const paymentIntentResponse =
+        await this.paymentApiClient.get<IPaymentIntentRetrieveDto>(
+          `/v1/payments/${paymentReceive.paymentIntentId}`,
+        );
+
+      if (paymentIntentResponse.status !== 200) {
+        throw new BadRequestException("Payment intent not found.");
+      }
+
+      const summary = paymentIntentResponse.data.payment.summary;
+      if (!summary || !summary.chargedAmount) {
+        throw new BadRequestException("Payment not completed yet.");
+      }
+
+      const paymentReceiveUpdate: UpdateQuery<PaymentReceiveDocument> = {
+        lastPaymentEvent: JSON.stringify(paymentIntentResponse),
+        paymentDate: new Date(),
+      };
+
+      const totalPaid = summary.chargedAmount / 100;
+      const totalDue = paymentReceive.totalDue - totalPaid;
+
+      paymentReceiveUpdate.totalDue = totalDue.toFixed(2);
+      paymentReceiveUpdate.totalPaid = totalPaid.toFixed(2);
+
+      await this.paymentReceiveRepository.updateOneById(
+        paymentReceive.id,
+        paymentReceiveUpdate,
+      );
+
+      await this.cleaningBookingRepository.updateOneById(booking.id, {
+        bookingStatus: CleaningBookingStatusEnum.BookingCompleted,
+        paymentStatus: CleaningBookingPaymentStatusEnum.PaymentCompleted,
+      });
+
+      const bookingUser =
+        booking.bookingUser as unknown as ApplicationUserDocument;
+
+      if (bookingUser) {
+        this.emailService.sendPaymentReceivedMail(
+          bookingUser.email,
+          bookingUser.fullName,
+          booking.cleaningDate,
+          booking.cleaningDuration,
+          paymentReceiveUpdate.paymentDate,
+          paymentReceiveUpdate.totalPaid,
+        );
+      }
+
+      return new SuccessResponseDto("Booking payment updated successfully");
     } catch (error) {
       if (error instanceof HttpException) throw error;
       if (error?.response?.data) {
