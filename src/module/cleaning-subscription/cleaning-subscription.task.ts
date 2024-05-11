@@ -50,6 +50,7 @@ export class CleaningSubscriptionTask {
           subscribedUser.email,
           subscribedUser.fullName,
           currentBooking.cleaningDate,
+          currentBooking.cleaningDuration,
           subscription.subscriptionFrequency,
         );
 

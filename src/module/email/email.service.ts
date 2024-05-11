@@ -72,15 +72,26 @@ export class EmailService {
   async sendBookingConfirmedMail(
     userEmail: string,
     bookingDateTime: Date,
+    bookingDuration: number,
     subscriptionFrequency: CleaningSubscriptionFrequencyEnum,
   ) {
     try {
+      const bookingStartDateTime = new Date(bookingDateTime);
+      const bookingEndDateTime = new Date(bookingDateTime);
+      bookingEndDateTime.setHours(
+        bookingStartDateTime.getHours() + bookingDuration,
+      );
+
       await this.mailerService.sendMail({
         to: userEmail,
         subject: "Your Booking has been confirmed.",
         template: "./booking-confirmed",
         context: {
-          bookingDateTime: new DateTimeHelper(bookingDateTime).formatDateTime(),
+          bookingDate: new DateTimeHelper(bookingStartDateTime).formatDate(),
+          bookingStartTime: new DateTimeHelper(
+            bookingStartDateTime,
+          ).formatTime(),
+          bookingEndTime: new DateTimeHelper(bookingEndDateTime).formatTime(),
           bookingFrequency: subscriptionFrequency?.replace(
             /([a-z])([A-Z])/g,
             "$1 $2",
@@ -117,10 +128,15 @@ export class EmailService {
     userEmail: string,
     userName: string = "User",
     upcomingDate: Date,
+    bookingDuration: number,
     subscriptionFrequency: CleaningSubscriptionFrequencyEnum,
   ) {
     try {
-      const cleaningDate = new DateTimeHelper(upcomingDate);
+      const bookingStartDateTime = new Date(upcomingDate);
+      const bookingEndDateTime = new Date(upcomingDate);
+      bookingEndDateTime.setHours(
+        bookingStartDateTime.getHours() + bookingDuration,
+      );
 
       await this.mailerService.sendMail({
         to: userEmail,
@@ -129,8 +145,11 @@ export class EmailService {
         context: {
           userName: userName,
           cancelLink: `${this.staticWebsiteUrl}/profile`,
-          bookingDate: cleaningDate.formatDate(),
-          bookingTime: cleaningDate.formatTime(),
+          bookingDate: new DateTimeHelper(bookingStartDateTime).formatDate(),
+          bookingStartTime: new DateTimeHelper(
+            bookingStartDateTime,
+          ).formatTime(),
+          bookingEndTime: new DateTimeHelper(bookingEndDateTime).formatTime(),
           subscriptionFrequency: subscriptionFrequency?.replace(
             /([a-z])([A-Z])/g,
             "$1 $2",
@@ -149,10 +168,15 @@ export class EmailService {
     userEmail: string,
     userName: string = "User",
     upcomingDate: Date,
+    bookingDuration: number,
     subscriptionFrequency: CleaningSubscriptionFrequencyEnum,
   ) {
     try {
-      const cleaningDate = new DateTimeHelper(upcomingDate);
+      const bookingStartDateTime = new Date(upcomingDate);
+      const bookingEndDateTime = new Date(upcomingDate);
+      bookingEndDateTime.setHours(
+        bookingStartDateTime.getHours() + bookingDuration,
+      );
 
       await this.mailerService.sendMail({
         to: userEmail,
@@ -162,8 +186,11 @@ export class EmailService {
         context: {
           userName: userName,
           cancelLink: `${this.staticWebsiteUrl}/profile`,
-          bookingDate: cleaningDate.formatDate(),
-          bookingTime: cleaningDate.formatTime(),
+          bookingDate: new DateTimeHelper(bookingStartDateTime).formatDate(),
+          bookingStartTime: new DateTimeHelper(
+            bookingStartDateTime,
+          ).formatTime(),
+          bookingEndTime: new DateTimeHelper(bookingEndDateTime).formatTime(),
           subscriptionFrequency: subscriptionFrequency?.replace(
             /([a-z])([A-Z])/g,
             "$1 $2",
@@ -182,10 +209,16 @@ export class EmailService {
     userEmail: string,
     userName: string = "User",
     cleaningDate: Date,
+    bookingDuration: number,
     paymentDate: Date,
     paymentAmount: number,
   ) {
     try {
+      const bookingStartDateTime = new Date(cleaningDate);
+      const bookingEndDateTime = new Date(cleaningDate);
+      bookingEndDateTime.setHours(
+        bookingStartDateTime.getHours() + bookingDuration,
+      );
       await this.mailerService.sendMail({
         to: userEmail,
         subject: "Payment Received",
@@ -196,7 +229,11 @@ export class EmailService {
           userName: userName,
           paymentAmount: paymentAmount,
           paymentDate: new DateTimeHelper(paymentDate).formatDateTime(),
-          cleaningDate: new DateTimeHelper(cleaningDate).formatDateTime(),
+          bookingDate: new DateTimeHelper(bookingStartDateTime).formatDate(),
+          bookingStartTime: new DateTimeHelper(
+            bookingStartDateTime,
+          ).formatTime(),
+          bookingEndTime: new DateTimeHelper(bookingEndDateTime).formatTime(),
         },
       });
       this.logger.log(
@@ -236,12 +273,18 @@ export class EmailService {
 
   async sendNewSubscriptionMailToAdmin(
     cleaningDate: Date,
+    bookingDuration: number,
     userName: string = "User",
     userPhone: string = "N/A",
     userAddress: string = "N/A",
   ) {
     try {
-      const cleaningDateTime = new DateTimeHelper(cleaningDate);
+      const bookingStartDateTime = new Date(cleaningDate);
+      const bookingEndDateTime = new Date(cleaningDate);
+      bookingEndDateTime.setHours(
+        bookingStartDateTime.getHours() + bookingDuration,
+      );
+
       await this.mailerService.sendMail({
         to: this.adminEmailAddress,
         subject: `You have a new booking request from ${userName || "New User"}`,
@@ -250,8 +293,11 @@ export class EmailService {
           userName: userName,
           userAddress: userAddress,
           userPhone: userPhone,
-          bookingDate: cleaningDateTime.formatDate(),
-          bookingTime: cleaningDateTime.formatTime(),
+          bookingDate: new DateTimeHelper(bookingStartDateTime).formatDate(),
+          bookingStartTime: new DateTimeHelper(
+            bookingStartDateTime,
+          ).formatTime(),
+          bookingEndTime: new DateTimeHelper(bookingEndDateTime).formatTime(),
         },
       });
       this.logger.log(
@@ -269,8 +315,15 @@ export class EmailService {
     userEmail: string,
     userName: string,
     rescheduledCleaningDate: Date,
+    bookingDuration: number,
   ) {
     try {
+      const bookingStartDateTime = new Date(rescheduledCleaningDate);
+      const bookingEndDateTime = new Date(rescheduledCleaningDate);
+      bookingEndDateTime.setHours(
+        bookingStartDateTime.getHours() + bookingDuration,
+      );
+
       await this.mailerService.sendMail({
         to: userEmail,
         subject: "Cleaning Schedule Update",
@@ -279,9 +332,11 @@ export class EmailService {
           companyName: this.companyName,
           companyWebsite: this.staticWebsiteUrl,
           userName: userName,
-          nextCleaningDate: new DateTimeHelper(
-            rescheduledCleaningDate,
-          ).formatDateTime(),
+          bookingDate: new DateTimeHelper(bookingStartDateTime).formatDate(),
+          bookingStartTime: new DateTimeHelper(
+            bookingStartDateTime,
+          ).formatTime(),
+          bookingEndTime: new DateTimeHelper(bookingEndDateTime).formatTime(),
         },
       });
       this.logger.log(

@@ -196,6 +196,7 @@ export class CleaningSubscriptionService {
 
       this.emailService.sendNewSubscriptionMailToAdmin(
         newSubscription.startDate,
+        newSubscription.cleaningDurationInHours,
         subscriptionUser.fullName,
         subscriptionUser.phoneNumber,
         subscriptionUser.address,
@@ -395,6 +396,7 @@ export class CleaningSubscriptionService {
         this.emailService.sendBookingConfirmedMail(
           bookingUser.email,
           updatedBooking.cleaningDate,
+          updatedBooking.cleaningDuration,
           subscription.subscriptionFrequency,
         );
       }
@@ -465,6 +467,7 @@ export class CleaningSubscriptionService {
         subscribedUser.email,
         subscribedUser.fullName ?? "User",
         newNextScheduleDate,
+        subscription.cleaningDurationInHours,
       );
 
       return new SuccessResponseDto("Next schedule date updated successfully");

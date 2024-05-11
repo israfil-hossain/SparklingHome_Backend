@@ -318,6 +318,7 @@ export class PaymentReceiveService {
       bookingUser.email,
       bookingUser.fullName,
       booking.cleaningDate,
+      booking.cleaningDuration,
       paymentReceiveUpdate.paymentDate,
       paymentReceiveUpdate.totalPaid,
     );

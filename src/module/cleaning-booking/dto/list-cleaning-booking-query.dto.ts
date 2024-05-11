@@ -17,7 +17,7 @@ export class ListCleaningBookingQueryDto extends PaginationQuery {
   })
   @IsOptional()
   @IsDateString()
-  FromDate?: string;
+  PaymentFromDate?: string;
 
   @ApiProperty({
     required: false,
@@ -25,5 +25,5 @@ export class ListCleaningBookingQueryDto extends PaginationQuery {
   })
   @IsOptional()
   @IsDateString()
-  ToDate?: string;
+  PaymentToDate?: string;
 }

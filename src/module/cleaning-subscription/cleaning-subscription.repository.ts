@@ -191,6 +191,7 @@ export class CleaningSubscriptionRepository extends GenericRepository<CleaningSu
             {
               $project: {
                 cleaningDate: 1,
+                cleaningDuration: 1,
               },
             },
           ],

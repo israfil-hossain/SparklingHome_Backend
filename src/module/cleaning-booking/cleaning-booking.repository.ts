@@ -44,11 +44,15 @@ export class CleaningBookingRepository extends GenericRepository<CleaningBooking
         ...(queryDto.BookingUserId && {
           bookingUser: queryDto.BookingUserId,
         }),
-        ...(queryDto.FromDate || queryDto.ToDate
+        ...(queryDto.PaymentFromDate || queryDto.PaymentToDate
           ? {
               "paymentReceive.paymentDate": {
-                ...(queryDto.FromDate && { $gte: new Date(queryDto.FromDate) }),
-                ...(queryDto.ToDate && { $lte: new Date(queryDto.ToDate) }),
+                ...(queryDto.PaymentFromDate && {
+                  $gte: new Date(queryDto.PaymentFromDate),
+                }),
+                ...(queryDto.PaymentToDate && {
+                  $lte: new Date(queryDto.PaymentToDate),
+                }),
               },
             }
           : {}),
