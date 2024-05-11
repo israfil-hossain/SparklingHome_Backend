@@ -1,6 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { FilterQuery } from "mongoose";
 import { ApplicationUser } from "../application-user/entities/application-user.entity";
 import { CleaningBooking } from "../cleaning-booking/entities/cleaning-booking.entity";
 import { CleaningBookingPaymentStatusEnum } from "../cleaning-booking/enum/cleaning-booking-payment-status.enum";
@@ -40,28 +39,32 @@ export class CleaningSubscriptionRepository extends GenericRepository<CleaningSu
       const size = queryDto.PageSize || 10;
       const skip = (page - 1) * size;
 
-      const subscriptionSearchQuery: FilterQuery<CleaningSubscriptionDocument> =
-        {
-          isActive: !queryDto.OnlyInactive,
-        };
-
-      if (queryDto.Frequency) {
-        subscriptionSearchQuery.subscriptionFrequency = queryDto.Frequency;
-      }
-
-      const cleaningDateFilter = [];
-
-      if (queryDto.FromDate) {
-        cleaningDateFilter.push({
-          $gte: ["$cleaningDate", new Date(queryDto.FromDate)],
-        });
-      }
-
-      if (queryDto.ToDate) {
-        cleaningDateFilter.push({
-          $lte: ["$cleaningDate", new Date(queryDto.ToDate)],
-        });
-      }
+      const subscriptionSearchQuery: any = {
+        isActive: !queryDto.OnlyInactive,
+        ...(queryDto.Frequency && {
+          subscriptionFrequency: queryDto.Frequency,
+        }),
+        ...(queryDto.FromDate || queryDto.ToDate
+          ? {
+              "currentBooking.cleaningDate": {
+                ...(queryDto.FromDate && { $gte: new Date(queryDto.FromDate) }),
+                ...(queryDto.ToDate && { $lte: new Date(queryDto.ToDate) }),
+              },
+            }
+          : {}),
+        ...(queryDto.ScheduleFromDate || queryDto.ScheduleToDate
+          ? {
+              nextScheduleDate: {
+                ...(queryDto.ScheduleFromDate && {
+                  $gte: new Date(queryDto.ScheduleFromDate),
+                }),
+                ...(queryDto.ScheduleToDate && {
+                  $lte: new Date(queryDto.ScheduleToDate),
+                }),
+              },
+            }
+          : {}),
+      };
 
       const modelAggregation = this.model
         .aggregate()
@@ -76,9 +79,6 @@ export class CleaningSubscriptionRepository extends GenericRepository<CleaningSu
                   $and: [
                     { $eq: ["$$currentBookingId", { $toString: "$_id" }] },
                     { $eq: ["$isActive", true] },
-                    {
-                      $and: cleaningDateFilter,
-                    },
                   ],
                 },
               },
@@ -118,6 +118,7 @@ export class CleaningSubscriptionRepository extends GenericRepository<CleaningSu
           as: "subscribedUser",
         })
         .unwind("$subscribedUser")
+        .match(subscriptionSearchQuery)
         .sort({
           [queryDto.OrderByNextScheduleDate
             ? "nextScheduleDate"

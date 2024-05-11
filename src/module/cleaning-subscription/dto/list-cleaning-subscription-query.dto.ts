@@ -55,4 +55,22 @@ export class ListCleaningSubscriptionQueryDto extends PaginationQuery {
   @IsOptional()
   @IsDateString()
   ToDate?: string;
+
+  @ApiProperty({
+    required: false,
+    description:
+      "Start date for filtering cleaning subscriptions by next schedule date.",
+  })
+  @IsOptional()
+  @IsDateString()
+  ScheduleFromDate?: string;
+
+  @ApiProperty({
+    required: false,
+    description:
+      "End date for filtering cleaning subscriptions by next schedule date.",
+  })
+  @IsOptional()
+  @IsDateString()
+  ScheduleToDate?: string;
 }
