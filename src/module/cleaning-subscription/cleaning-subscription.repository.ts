@@ -68,7 +68,6 @@ export class CleaningSubscriptionRepository extends GenericRepository<CleaningSu
 
       const modelAggregation = this.model
         .aggregate()
-        .match(subscriptionSearchQuery)
         .lookup({
           from: CleaningBooking.name.toLowerCase().concat("s"),
           let: { currentBookingId: "$currentBooking" },

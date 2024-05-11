@@ -4,7 +4,6 @@ import {
   Injectable,
   Logger,
 } from "@nestjs/common";
-import { FilterQuery } from "mongoose";
 import { ApplicationUserDocument } from "../application-user/entities/application-user.entity";
 import { ApplicationUserRoleEnum } from "../application-user/enum/application-user-role.enum";
 import { PaginatedResponseDto } from "../common/dto/paginated-response.dto";
@@ -12,8 +11,6 @@ import { SuccessResponseDto } from "../common/dto/success-response.dto";
 import { EmailService } from "../email/email.service";
 import { CleaningBookingRepository } from "./cleaning-booking.repository";
 import { ListCleaningBookingQueryDto } from "./dto/list-cleaning-booking-query.dto";
-import { CleaningBookingDocument } from "./entities/cleaning-booking.entity";
-import { CleaningBookingPaymentStatusEnum } from "./enum/cleaning-booking-payment-status.enum";
 import { CleaningBookingStatusEnum } from "./enum/cleaning-booking-status.enum";
 
 @Injectable()
@@ -26,44 +23,25 @@ export class CleaningBookingService {
   ) {}
 
   async getAllPaidBooking(
-    {
-      Page = 1,
-      PageSize = 10,
-      BookingUserId = "",
-    }: ListCleaningBookingQueryDto,
+    queryFilterDto: ListCleaningBookingQueryDto,
     { userId, userRole }: ITokenPayload,
   ): Promise<PaginatedResponseDto> {
     try {
-      // Search query setup
-      const searchQuery: FilterQuery<CleaningBookingDocument> = {
-        bookingStatus: CleaningBookingStatusEnum.BookingCompleted,
-        paymentStatus: CleaningBookingPaymentStatusEnum.PaymentCompleted,
-      };
-
       if (userRole !== ApplicationUserRoleEnum.ADMIN) {
-        searchQuery.bookingUser = userId;
-      } else if (!!BookingUserId) {
-        searchQuery.bookingUser = BookingUserId;
+        queryFilterDto.BookingUserId = userId;
       }
 
-      // Pagination setup
-      const totalRecords =
-        await this.cleaningBookingRepository.count(searchQuery);
-      const skip = (Page - 1) * PageSize;
+      const queryResult =
+        await this.cleaningBookingRepository.getAllPaidBookingsByFilter(
+          queryFilterDto,
+        );
 
-      const result = await this.cleaningBookingRepository.getAll(searchQuery, {
-        limit: PageSize,
-        skip,
-        populate: [
-          {
-            path: "bookingUser",
-            select: "email fullName profilePicture",
-          },
-          { path: "paymentReceive", select: "-_id totalPaid paymentIntentId" },
-        ],
-      });
-
-      return new PaginatedResponseDto(totalRecords, Page, PageSize, result);
+      return new PaginatedResponseDto(
+        queryResult.count,
+        queryFilterDto.Page ?? 1,
+        queryFilterDto.PageSize ?? 10,
+        queryResult.results,
+      );
     } catch (error) {
       if (error instanceof HttpException) throw error;
 

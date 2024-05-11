@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsMongoId, IsOptional } from "class-validator";
+import { IsDateString, IsMongoId, IsOptional } from "class-validator";
 import { PaginationQuery } from "../../common/dto/pagintation-query.dto";
 
 export class ListCleaningBookingQueryDto extends PaginationQuery {
@@ -10,4 +10,20 @@ export class ListCleaningBookingQueryDto extends PaginationQuery {
   @IsMongoId({ message: "Invalid booking user Id" })
   @IsOptional()
   BookingUserId?: string;
+
+  @ApiProperty({
+    required: false,
+    description: "Start date for filtering cleaning subscriptions.",
+  })
+  @IsOptional()
+  @IsDateString()
+  FromDate?: string;
+
+  @ApiProperty({
+    required: false,
+    description: "End date for filtering cleaning subscriptions.",
+  })
+  @IsOptional()
+  @IsDateString()
+  ToDate?: string;
 }

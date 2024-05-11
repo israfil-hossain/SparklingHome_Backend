@@ -2,6 +2,8 @@ import { Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { ApplicationUser } from "../application-user/entities/application-user.entity";
 import { GenericRepository } from "../common/repository/generic-repository";
+import { PaymentReceive } from "../payment-receive/entities/payment-receive.entity";
+import { ListCleaningBookingQueryDto } from "./dto/list-cleaning-booking-query.dto";
 import {
   CleaningBooking,
   CleaningBookingDocument,
@@ -9,6 +11,11 @@ import {
 } from "./entities/cleaning-booking.entity";
 import { CleaningBookingPaymentStatusEnum } from "./enum/cleaning-booking-payment-status.enum";
 import { CleaningBookingStatusEnum } from "./enum/cleaning-booking-status.enum";
+
+interface ICleaningBookingFilterResult {
+  count: number;
+  results: CleaningBookingDocument[];
+}
 
 @Injectable()
 export class CleaningBookingRepository extends GenericRepository<CleaningBookingDocument> {
@@ -21,6 +28,87 @@ export class CleaningBookingRepository extends GenericRepository<CleaningBooking
     const logger = new Logger(CleaningBookingRepository.name);
     super(model, logger);
     this.logger = logger;
+  }
+
+  async getAllPaidBookingsByFilter(
+    queryDto: ListCleaningBookingQueryDto,
+  ): Promise<ICleaningBookingFilterResult> {
+    try {
+      const page = queryDto.Page || 1;
+      const size = queryDto.PageSize || 10;
+      const skip = (page - 1) * size;
+
+      const bookingFilterQuery: any = {
+        bookingStatus: CleaningBookingStatusEnum.BookingCompleted,
+        paymentStatus: CleaningBookingPaymentStatusEnum.PaymentCompleted,
+        ...(queryDto.BookingUserId && {
+          bookingUser: queryDto.BookingUserId,
+        }),
+        ...(queryDto.FromDate || queryDto.ToDate
+          ? {
+              "paymentReceive.paymentDate": {
+                ...(queryDto.FromDate && { $gte: new Date(queryDto.FromDate) }),
+                ...(queryDto.ToDate && { $lte: new Date(queryDto.ToDate) }),
+              },
+            }
+          : {}),
+      };
+
+      const modelAggregation = this.model
+        .aggregate()
+        .lookup({
+          from: PaymentReceive.name.toLocaleLowerCase().concat("s"),
+          let: { paymentReceiveId: "$paymentReceive" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: [{ $toString: "$_id" }, "$$paymentReceiveId"] },
+                  ],
+                },
+              },
+            },
+            {
+              $unset: [
+                "lastPaymentEvent",
+                "paymentRedirectUrl",
+                "paymentIntentId",
+              ],
+            },
+          ],
+          as: "paymentReceive",
+        })
+        .unwind("$paymentReceive")
+        .match(bookingFilterQuery)
+        .sort({
+          "paymentReceive.paymentDate": -1,
+        })
+        .group({
+          _id: null,
+          count: { $sum: 1 },
+          results: { $push: "$$ROOT" },
+        })
+        .project({
+          count: 1,
+          results: { $slice: ["$results", skip, size] },
+        });
+
+      const aggregationResult = await modelAggregation.exec();
+
+      const queryResult: ICleaningBookingFilterResult =
+        aggregationResult.length > 0
+          ? aggregationResult[0]
+          : { count: 0, results: [] };
+
+      return queryResult;
+    } catch (error) {
+      this.logger.error("Error finding subscriptions by filter: ", error);
+      return {
+        count: 0,
+        results: [],
+      };
+    }
   }
 
   async getTotalBookingEarnings(): Promise<number> {
