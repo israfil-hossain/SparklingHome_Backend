@@ -19,11 +19,30 @@ export class SentryLogger extends ConsoleLogger {
 
     Sentry.withScope((scope) => {
       scope.setExtra("message", errorMessage);
-      scope.setExtra("stack", stack);
       scope.setExtra("context", logContext);
+      scope.setExtra("stack", stack);
       Sentry.captureMessage(formattedMessage, "error");
     });
 
     super.error(errorMessage, ...optionalParams);
+  }
+
+  verbose(message: any, ...optionalParams: any[]): void {
+    const verboseMessage = message ? message.toString() : "";
+    const logContext = optionalParams.shift() || "";
+    const extra = optionalParams;
+
+    const formattedMessage = logContext
+      ? `${logContext}: ${verboseMessage}`
+      : verboseMessage;
+
+    Sentry.withScope((scope) => {
+      scope.setExtra("message", verboseMessage);
+      scope.setExtra("context", logContext);
+      scope.setExtra("extra", extra);
+      Sentry.captureMessage(formattedMessage, "info");
+    });
+
+    super.verbose(verboseMessage, ...extra);
   }
 }

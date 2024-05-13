@@ -53,10 +53,6 @@ export class CleaningSubscriptionTask {
           currentBooking.cleaningDuration,
           subscription.subscriptionFrequency,
         );
-
-        this.logger.log(
-          `Booking reminder notification sent to user with email: ${subscribedUser.email}`,
-        );
       } catch (error) {
         this.logger.error(
           "Error notifying user for upcoming booking from scheduler: ",
@@ -146,9 +142,8 @@ export class CleaningSubscriptionTask {
           },
         );
 
-        this.logger.log(
-          "Booking renewed from subscription with Id: " +
-            subscription._id.toString(),
+        this.logger.verbose(
+          "Booking renewed for user: " + subscribedUser.email,
         );
       } catch (err) {
         this.logger.error("Error renewing booking from scheduler: ", err);

@@ -36,7 +36,7 @@ export class EmailService {
           email: userEmail,
         },
       });
-      this.logger.log("Email sent successfully to: " + userEmail);
+      this.logger.verbose("Signup email sent successfully to: " + userEmail);
     } catch (error) {
       this.logger.error("Failed to send welcome email: ", error);
     }
@@ -61,7 +61,7 @@ export class EmailService {
           resetLink: resetLink || "",
         },
       });
-      this.logger.log(
+      this.logger.verbose(
         "Forget Password email sent successfully to: " + userEmail,
       );
     } catch (error) {
@@ -98,7 +98,7 @@ export class EmailService {
           ),
         },
       });
-      this.logger.log(
+      this.logger.verbose(
         "Booking confirmed email sent successfully to: " + userEmail,
       );
     } catch (error) {
@@ -116,7 +116,7 @@ export class EmailService {
           websiteUrl: this.staticWebsiteUrl,
         },
       });
-      this.logger.log(
+      this.logger.verbose(
         "Booking served email sent successfully to: " + userEmail,
       );
     } catch (error) {
@@ -156,7 +156,7 @@ export class EmailService {
           ),
         },
       });
-      this.logger.log(
+      this.logger.verbose(
         "Booking renewed email sent successfully to: " + userEmail,
       );
     } catch (error) {
@@ -197,8 +197,8 @@ export class EmailService {
           ),
         },
       });
-      this.logger.log(
-        "Booking renewed email sent successfully to: " + userEmail,
+      this.logger.verbose(
+        "Booking renew reminder email sent successfully to: " + userEmail,
       );
     } catch (error) {
       this.logger.error("Failed to send booking renewed email: ", error);
@@ -236,7 +236,7 @@ export class EmailService {
           bookingEndTime: new DateTimeHelper(bookingEndDateTime).formatTime(),
         },
       });
-      this.logger.log(
+      this.logger.verbose(
         `Payment received email sent successfully to: ${userEmail}`,
       );
     } catch (error) {
@@ -260,7 +260,7 @@ export class EmailService {
           password: userPassword,
         },
       });
-      this.logger.log(
+      this.logger.verbose(
         `New cleaning subscription confirmation email sent successfully to: ${userEmail}`,
       );
     } catch (error) {
@@ -300,7 +300,7 @@ export class EmailService {
           bookingEndTime: new DateTimeHelper(bookingEndDateTime).formatTime(),
         },
       });
-      this.logger.log(
+      this.logger.verbose(
         "New subscription notification sent to admin successfully.",
       );
     } catch (error) {
@@ -339,7 +339,7 @@ export class EmailService {
           bookingEndTime: new DateTimeHelper(bookingEndDateTime).formatTime(),
         },
       });
-      this.logger.log(
+      this.logger.verbose(
         `Reschedule notification email sent successfully to: ${userEmail}`,
       );
     } catch (error) {
