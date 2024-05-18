@@ -1,8 +1,9 @@
 import { Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { NestFactory } from "@nestjs/core";
+import { BaseExceptionFilter, NestFactory } from "@nestjs/core";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import * as Sentry from "@sentry/node";
+import { nodeProfilingIntegration } from "@sentry/profiling-node";
 import { AppModule } from "./app.module";
 import { configureSwaggerUI } from "./config/swagger.config";
 import { SentryLogger } from "./utility/logger/sentry.logger";
@@ -16,7 +17,15 @@ async function bootstrap() {
   Sentry.init({
     dsn: cfg.get<string>("SENTRY_DNS", ""),
     environment: cfg.get<string>("NODE_ENV", "development"),
+    tracesSampleRate: 1.0,
+    profilesSampleRate: 1.0,
+    integrations: [nodeProfilingIntegration()],
   });
+
+  Sentry.setupNestErrorHandler(
+    app,
+    new BaseExceptionFilter(app.getHttpAdapter()),
+  );
 
   app.useLogger(new SentryLogger());
 
