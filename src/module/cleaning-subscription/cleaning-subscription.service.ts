@@ -468,6 +468,7 @@ export class CleaningSubscriptionService {
         subscribedUser.fullName ?? "User",
         newNextScheduleDate,
         subscription.cleaningDurationInHours,
+        subscription.subscriptionFrequency,
       );
 
       return new SuccessResponseDto("Next schedule date updated successfully");

@@ -316,6 +316,7 @@ export class EmailService {
     userName: string,
     rescheduledCleaningDate: Date,
     bookingDuration: number,
+    subscriptionFrequency: CleaningSubscriptionFrequencyEnum,
   ) {
     try {
       const bookingStartDateTime = new Date(rescheduledCleaningDate);
@@ -332,6 +333,10 @@ export class EmailService {
           companyName: this.companyName,
           companyWebsite: this.staticWebsiteUrl,
           userName: userName,
+          subscriptionFrequency: subscriptionFrequency?.replace(
+            /([a-z])([A-Z])/g,
+            "$1 $2",
+          ),
           bookingDate: new DateTimeHelper(bookingStartDateTime).formatDate(),
           bookingStartTime: new DateTimeHelper(
             bookingStartDateTime,
