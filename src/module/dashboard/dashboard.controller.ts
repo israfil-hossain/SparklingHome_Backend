@@ -19,4 +19,14 @@ export class DashboardController {
   getCardStats() {
     return this.dashboardService.getCardStats();
   }
+
+  @Get("GetBookingForUpcomingWeek")
+  @ApiResponse({
+    status: 200,
+    type: SuccessResponseDto,
+  })
+  @RequiredRoles([ApplicationUserRoleEnum.ADMIN])
+  getBookingForUpcomingWeek() {
+    return this.dashboardService.getBookingForUpcomingWeek();
+  }
 }

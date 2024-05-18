@@ -5,6 +5,7 @@ import {
   Logger,
 } from "@nestjs/common";
 import { ApplicationUserRepository } from "../application-user/application-user.repository";
+import { ApplicationUserRoleEnum } from "../application-user/enum/application-user-role.enum";
 import { CleaningBookingRepository } from "../cleaning-booking/cleaning-booking.repository";
 import { CleaningSubscriptionRepository } from "../cleaning-subscription/cleaning-subscription.repository";
 import { SuccessResponseDto } from "../common/dto/success-response.dto";
@@ -22,13 +23,11 @@ export class DashboardService {
   async getCardStats() {
     try {
       const totalUsers = await this.applicationUserRepository.count({
-        isActive: true,
+        role: ApplicationUserRoleEnum.USER,
       });
 
       const totalSubscriptions =
-        await this.cleaningSubscriptionRepository.count({
-          isActive: true,
-        });
+        await this.cleaningSubscriptionRepository.count();
 
       const totalEarnings =
         await this.cleaningBookingRepository.getTotalBookingEarnings();
@@ -48,6 +47,23 @@ export class DashboardService {
 
       this.logger.error("Error updating bookin:", error);
       throw new BadRequestException("Could not update booking");
+    }
+  }
+
+  async getBookingForUpcomingWeek() {
+    try {
+      const upcomingSubscriptionBookings =
+        await this.cleaningSubscriptionRepository.getSubscriptionsForUpcomingWeek();
+
+      return new SuccessResponseDto(
+        "Upcoming booking fetched successfully",
+        upcomingSubscriptionBookings,
+      );
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+
+      this.logger.error("Error getting upcoming booking:", error);
+      throw new BadRequestException("Could not get upcoming booking");
     }
   }
 }

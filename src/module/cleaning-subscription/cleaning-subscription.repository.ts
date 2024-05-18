@@ -316,4 +316,96 @@ export class CleaningSubscriptionRepository extends GenericRepository<CleaningSu
       return [];
     }
   }
+
+  async getSubscriptionsForUpcomingWeek(): Promise<
+    CleaningSubscriptionDocument[]
+  > {
+    try {
+      const currentDate = new Date();
+      const dateAfterAWeek = new Date(currentDate);
+      dateAfterAWeek.setDate(currentDate.getDate() + 7);
+      dateAfterAWeek.setHours(23, 59, 59, 999);
+
+      const modelAggregation = this.model
+        .aggregate()
+        .lookup({
+          from: CleaningBooking.name.toLowerCase().concat("s"),
+          let: { currentBookingId: "$currentBooking" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$$currentBookingId", { $toString: "$_id" }] },
+                    { $eq: ["$isActive", true] },
+                    { $gte: ["$cleaningDate", currentDate] },
+                    { $lte: ["$cleaningDate", dateAfterAWeek] },
+                    {
+                      $eq: [
+                        "$bookingStatus",
+                        CleaningBookingStatusEnum.BookingInitiated,
+                      ],
+                    },
+                    {
+                      $eq: [
+                        "$paymentStatus",
+                        CleaningBookingPaymentStatusEnum.PaymentPending,
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+            {
+              $unset: [
+                "isActive",
+                "createdAt",
+                "createdBy",
+                "updatedAt",
+                "updatedBy",
+                "paymentReceive",
+              ],
+            },
+          ],
+          as: "currentBooking",
+        })
+        .unwind("$currentBooking")
+        .lookup({
+          from: ApplicationUser.name.toLocaleLowerCase().concat("s"),
+          let: { subscribedUserId: "$subscribedUser" },
+          pipeline: [
+            {
+              $match: {
+                isActive: true,
+                $expr: {
+                  $eq: [
+                    {
+                      $toString: "$_id",
+                    },
+                    "$$subscribedUserId",
+                  ],
+                },
+              },
+            },
+            {
+              $unset: ["role", "isActive", "password", "isPasswordLess"],
+            },
+          ],
+          as: "subscribedUser",
+        })
+        .unwind("$subscribedUser")
+        .match({
+          isActive: true,
+        })
+        .sort({
+          "currentBooking.cleaningDate": 1,
+        });
+
+      const result = await modelAggregation.exec();
+      return result;
+    } catch (error) {
+      this.logger.error("Error finding subscriptions for renew:", error);
+      return [];
+    }
+  }
 }
