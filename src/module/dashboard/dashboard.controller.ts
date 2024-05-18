@@ -29,4 +29,14 @@ export class DashboardController {
   getBookingForUpcomingWeek() {
     return this.dashboardService.getBookingForUpcomingWeek();
   }
+
+  @Get("GetLatestBookingPayments")
+  @ApiResponse({
+    status: 200,
+    type: SuccessResponseDto,
+  })
+  @RequiredRoles([ApplicationUserRoleEnum.ADMIN])
+  getLatestBookingPayments() {
+    return this.dashboardService.getLatestBookingPayments();
+  }
 }

@@ -63,7 +63,24 @@ export class DashboardService {
       if (error instanceof HttpException) throw error;
 
       this.logger.error("Error getting upcoming booking:", error);
-      throw new BadRequestException("Could not get upcoming booking");
+      throw new BadRequestException("Could not get upcoming bookings");
+    }
+  }
+
+  async getLatestBookingPayments() {
+    try {
+      const latestPaidBookings =
+        await this.cleaningBookingRepository.getLatestPaidBookings();
+
+      return new SuccessResponseDto(
+        "Latest paid bookings fetched successfully",
+        latestPaidBookings,
+      );
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+
+      this.logger.error("Error getting latest paid booking:", error);
+      throw new BadRequestException("Could not get latest paid bookings");
     }
   }
 }

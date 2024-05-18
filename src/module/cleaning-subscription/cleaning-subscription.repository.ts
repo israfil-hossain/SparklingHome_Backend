@@ -111,7 +111,13 @@ export class CleaningSubscriptionRepository extends GenericRepository<CleaningSu
               },
             },
             {
-              $unset: ["role", "isActive", "password", "isPasswordLess"],
+              $unset: [
+                "role",
+                "isActive",
+                "password",
+                "isPasswordLess",
+                "profilePicture",
+              ],
             },
           ],
           as: "subscribedUser",
@@ -388,7 +394,13 @@ export class CleaningSubscriptionRepository extends GenericRepository<CleaningSu
               },
             },
             {
-              $unset: ["role", "isActive", "password", "isPasswordLess"],
+              $unset: [
+                "role",
+                "isActive",
+                "password",
+                "isPasswordLess",
+                "profilePicture",
+              ],
             },
           ],
           as: "subscribedUser",

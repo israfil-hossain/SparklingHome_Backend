@@ -78,7 +78,13 @@ export class CleaningBookingRepository extends GenericRepository<CleaningBooking
               },
             },
             {
-              $unset: ["role", "isActive", "password", "isPasswordLess"],
+              $unset: [
+                "role",
+                "isActive",
+                "password",
+                "isPasswordLess",
+                "profilePicture",
+              ],
             },
           ],
           as: "bookingUser",
@@ -208,6 +214,77 @@ export class CleaningBookingRepository extends GenericRepository<CleaningBooking
       });
 
     const result = await modelAggregation.exec();
+    return result;
+  }
+
+  async getLatestPaidBookings(
+    limitUpTo: number = 10,
+  ): Promise<CleaningBookingDocument[]> {
+    const modelAggregation = this.model
+      .aggregate()
+      .lookup({
+        from: ApplicationUser.name.toLocaleLowerCase().concat("s"),
+        let: { bookingUserId: "$bookingUser" },
+        pipeline: [
+          {
+            $match: {
+              isActive: true,
+              $expr: {
+                $eq: [
+                  {
+                    $toString: "$_id",
+                  },
+                  "$$bookingUserId",
+                ],
+              },
+            },
+          },
+          {
+            $unset: [
+              "role",
+              "isActive",
+              "password",
+              "isPasswordLess",
+              "profilePicture",
+            ],
+          },
+        ],
+        as: "bookingUser",
+      })
+      .unwind("$bookingUser")
+      .lookup({
+        from: PaymentReceive.name.toLocaleLowerCase().concat("s"),
+        let: { paymentReceiveId: "$paymentReceive" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [{ $eq: [{ $toString: "$_id" }, "$$paymentReceiveId"] }],
+              },
+            },
+          },
+          {
+            $unset: [
+              "lastPaymentEvent",
+              "paymentRedirectUrl",
+              "paymentIntentId",
+            ],
+          },
+        ],
+        as: "paymentReceive",
+      })
+      .unwind("$paymentReceive")
+      .match({
+        bookingStatus: CleaningBookingStatusEnum.BookingCompleted,
+        paymentStatus: CleaningBookingPaymentStatusEnum.PaymentCompleted,
+      })
+      .sort({
+        "paymentReceive.paymentDate": -1,
+      })
+      .limit(limitUpTo);
+
+    const result = await modelAggregation.exec();
+
     return result;
   }
 }
