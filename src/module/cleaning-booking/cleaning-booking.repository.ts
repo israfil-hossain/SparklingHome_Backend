@@ -44,7 +44,10 @@ export class CleaningBookingRepository extends GenericRepository<CleaningBooking
         ...(queryDto.BookingUserId && {
           bookingUser: queryDto.BookingUserId,
         }),
-        ...(queryDto.PaymentFromDate || queryDto.PaymentToDate
+      };
+
+      const paymentDateFilterQuery =
+        queryDto.PaymentFromDate || queryDto.PaymentToDate
           ? {
               "paymentReceive.paymentDate": {
                 ...(queryDto.PaymentFromDate && {
@@ -55,11 +58,11 @@ export class CleaningBookingRepository extends GenericRepository<CleaningBooking
                 }),
               },
             }
-          : {}),
-      };
+          : {};
 
       const modelAggregation = this.model
         .aggregate()
+        .match(bookingFilterQuery)
         .lookup({
           from: ApplicationUser.name.toLocaleLowerCase().concat("s"),
           let: { bookingUserId: "$bookingUser" },
@@ -114,7 +117,7 @@ export class CleaningBookingRepository extends GenericRepository<CleaningBooking
           as: "paymentReceive",
         })
         .unwind("$paymentReceive")
-        .match(bookingFilterQuery)
+        .match(paymentDateFilterQuery)
         .sort({
           "paymentReceive.paymentDate": -1,
         })
