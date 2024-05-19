@@ -77,7 +77,6 @@ export class CleaningSubscriptionRepository extends GenericRepository<CleaningSu
                 $expr: {
                   $and: [
                     { $eq: ["$$currentBookingId", { $toString: "$_id" }] },
-                    { $eq: ["$isActive", true] },
                   ],
                 },
               },
@@ -105,7 +104,6 @@ export class CleaningSubscriptionRepository extends GenericRepository<CleaningSu
                 $expr: {
                   $and: [
                     { $eq: [{ $toString: "$_id" }, "$$subscribedUserId"] },
-                    { $eq: ["$isActive", true] },
                   ],
                 },
               },
