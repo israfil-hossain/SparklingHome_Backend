@@ -1,6 +1,6 @@
 export class DateTimeHelper {
   private date: Date;
-  private months: string[] = [
+  private readonly months: string[] = [
     "Jan",
     "Feb",
     "Mar",
@@ -20,15 +20,15 @@ export class DateTimeHelper {
   }
 
   formatDate(): string {
-    const day = this.getDayOfMonth();
-    const month = this.getMonthAbbreviation();
-    const year = this.date.getUTCFullYear();
+    const day = this.getPaddedNumber(this.date.getDate());
+    const month = this.getMonthAbbreviation(this.date);
+    const year = this.date.getFullYear();
     return `${day} ${month}, ${year}`;
   }
 
   formatTime(): string {
-    const hours = this.getPaddedHours();
-    const minutes = this.getPaddedMinutes();
+    const hours = this.getPaddedNumber(this.date.getHours());
+    const minutes = this.getPaddedNumber(this.date.getMinutes());
     return `${hours}:${minutes}`;
   }
 
@@ -38,19 +38,19 @@ export class DateTimeHelper {
     return `${date} - ${time}`;
   }
 
-  private getDayOfMonth(): string {
-    return this.date.getUTCDate().toString().padStart(2, "0");
+  formatEndTime(serviceDuration: number): string {
+    const endDateTime = new Date(this.date);
+    endDateTime.setMinutes(endDateTime.getMinutes() + serviceDuration * 60);
+    const hours = this.getPaddedNumber(endDateTime.getHours());
+    const minutes = this.getPaddedNumber(endDateTime.getMinutes());
+    return `${hours}:${minutes}`;
   }
 
-  private getMonthAbbreviation(): string {
-    return this.months[this.date.getUTCMonth()];
+  private getMonthAbbreviation(date: Date): string {
+    return this.months[date.getMonth()];
   }
 
-  private getPaddedHours(): string {
-    return this.date.getHours().toString().padStart(2, "0");
-  }
-
-  private getPaddedMinutes(): string {
-    return this.date.getMinutes().toString().padStart(2, "0");
+  private getPaddedNumber(num: number): string {
+    return num.toString().padStart(2, "0");
   }
 }
