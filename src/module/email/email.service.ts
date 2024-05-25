@@ -301,6 +301,7 @@ export class EmailService {
         context: {
           companyName: this.companyName,
           companyWebsite: this.staticWebsiteUrl,
+          cancelLink: `${this.staticWebsiteUrl}/profile`,
           userName: userName,
           subscriptionFrequency: subscriptionFrequency?.replace(
             /([a-z])([A-Z])/g,
