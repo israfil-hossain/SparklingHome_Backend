@@ -38,10 +38,10 @@ class AuthenticationGuard implements CanActivate {
     //#endregion
 
     //#region Verify jwt token from request or throw
-    const request = context.switchToHttp().getRequest();
-    const token = this.extractTokenFromHeader(request);
-
     try {
+      const request = context.switchToHttp().getRequest();
+      const token = this.extractTokenFromHeader(request);
+
       const tokenPayload: ITokenPayload = await this.jwtService.verifyAsync(
         token,
         {
@@ -53,12 +53,12 @@ class AuthenticationGuard implements CanActivate {
       );
 
       if (!tokenPayload.userId || !tokenPayload.userRole) {
-        throw new Error(token);
+        throw new Error("Invalid payload found in token");
       }
 
       request["user"] = tokenPayload;
     } catch (error) {
-      this.logger.error("Invalid payload found in token", error);
+      this.logger.error("Token validation error", error);
       throw new UnauthorizedException(
         "User is not authorized to perform this action",
       );
@@ -72,13 +72,7 @@ class AuthenticationGuard implements CanActivate {
   private extractTokenFromHeader(request: ExpressRequest): string {
     const [type, token] = request?.headers?.authorization?.split(" ") ?? [];
     if (type !== "Bearer" || !token) {
-      this.logger.error(
-        `Invalid authorization header: `,
-        request?.headers?.authorization,
-      );
-      throw new UnauthorizedException(
-        "User is not authorized to perform this action",
-      );
+      throw new Error("Invalid authorization header");
     }
 
     return token;

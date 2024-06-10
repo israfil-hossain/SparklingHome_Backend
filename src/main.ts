@@ -1,6 +1,6 @@
 import { Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { BaseExceptionFilter, NestFactory } from "@nestjs/core";
+import { NestFactory } from "@nestjs/core";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import * as Sentry from "@sentry/node";
 import { nodeProfilingIntegration } from "@sentry/profiling-node";
@@ -19,13 +19,9 @@ async function bootstrap() {
     environment: cfg.get<string>("NODE_ENV", "development"),
     tracesSampleRate: 1.0,
     profilesSampleRate: 1.0,
+    normalizeDepth: 5,
     integrations: [nodeProfilingIntegration()],
   });
-
-  Sentry.setupNestErrorHandler(
-    app,
-    new BaseExceptionFilter(app.getHttpAdapter()),
-  );
 
   app.useLogger(new SentryLogger());
 
