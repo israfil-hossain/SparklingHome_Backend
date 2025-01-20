@@ -353,7 +353,7 @@ export class PaymentReceiveService {
     paymentStatus: CleaningBookingPaymentStatusEnum,
   ): Promise<void> {
     const paymentReceive = await this.paymentReceiveRepository.getOneWhere({
-      paymentIntentId: data.paymentId,
+      paymentIntentId: data?.paymentId,
     });
 
     if (!paymentReceive) {
@@ -378,7 +378,7 @@ export class PaymentReceiveService {
 
     const paymentReceiveUpdate: UpdateQuery<PaymentReceiveDocument> = {
       lastPaymentEvent: JSON.stringify(data),
-      paymentDate: new Date(),
+      updatedAt: new Date(),
     };
 
     if (paymentStatus === CleaningBookingPaymentStatusEnum.PaymentCompleted) {
@@ -390,27 +390,28 @@ export class PaymentReceiveService {
 
       paymentReceiveUpdate.totalDue = totalDue.toFixed(2);
       paymentReceiveUpdate.totalPaid = totalPaid.toFixed(2);
+      paymentReceiveUpdate.paymentDate = new Date();
+
+      await this.cleaningBookingRepository.updateOneById(booking.id, {
+        bookingStatus: CleaningBookingStatusEnum.BookingCompleted,
+        paymentStatus,
+      });
+
+      const bookingUser =
+        booking.bookingUser as unknown as ApplicationUserDocument;
+      this.emailService.sendPaymentReceivedMail(
+        bookingUser.email,
+        bookingUser.fullName,
+        booking.cleaningDate,
+        booking.cleaningDuration,
+        paymentReceiveUpdate.paymentDate,
+        paymentReceiveUpdate.totalPaid,
+      );
     }
 
     await this.paymentReceiveRepository.updateOneById(
       paymentReceive.id,
       paymentReceiveUpdate,
-    );
-
-    await this.cleaningBookingRepository.updateOneById(booking.id, {
-      bookingStatus: CleaningBookingStatusEnum.BookingCompleted,
-      paymentStatus,
-    });
-
-    const bookingUser =
-      booking.bookingUser as unknown as ApplicationUserDocument;
-    this.emailService.sendPaymentReceivedMail(
-      bookingUser.email,
-      bookingUser.fullName,
-      booking.cleaningDate,
-      booking.cleaningDuration,
-      paymentReceiveUpdate.paymentDate,
-      paymentReceiveUpdate.totalPaid,
     );
   }
 
@@ -425,3 +426,4 @@ export class PaymentReceiveService {
   }
   //#endregion
 }
+
